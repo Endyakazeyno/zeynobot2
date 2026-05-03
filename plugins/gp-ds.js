@@ -57,15 +57,17 @@ let handler = async (m, { conn, isOwner, isAdmin }) => {
         };
         let imageBuffer = await getBuffer(profilePicture);
 
-        // Invio con meccanica AdReply
+        // Invio con meccanica AdReply + Inoltro Canale
         await conn.sendMessage(m.chat, { 
             text: text,
             contextInfo: {
+                forwardingScore: 999,
+                isForwarded: true,
                 externalAdReply: {
-                    title: '𝐂𝐚𝐜𝐡𝐞 𝐜𝐥𝐞𝐚𝐫𝐞𝐝 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲 ✅', // Testo nel quadrato
+                    title: '𝐂𝐥𝐞𝐚𝐫𝐞𝐝 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲 ✅', 
                     body: '𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐲𝐬𝐭𝐞𝐦',
                     thumbnail: imageBuffer,
-                    mediaType: 1, // Miniatura a lato
+                    mediaType: 1, 
                     renderLargerThumbnail: false,
                     sourceUrl: null
                 }
