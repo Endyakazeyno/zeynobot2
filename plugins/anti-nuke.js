@@ -1,84 +1,113 @@
 
-// 🛡️ LEGAM OS - SISTEMA ANTINUKE SUPREMO
+import fetch from 'node-fetch'
 
-const legamHeader = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· ☢️ 𝐀 𝐍 𝐓 𝐈 𝐍 𝐔 𝐊 𝐄 ☢️ ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+const legamHeader = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Protection_
+───────────────
+· ☢️ 𝐀 𝐍 𝐓 𝐈 𝐍 𝐔 𝐊 𝐄 ☢️ ·
+───────────────`;
 
-let handler = async (m, { conn, text, command, usedPrefix }) => {
-    if (!m.isGroup) return m.reply("『 ❌ 』 `Questo comando funziona solo nei gruppi.`");
+let handler = async (m, { conn, text, command, usedPrefix, isOwner }) => {
+    if (!m.isGroup) return m.reply("*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System_\n───────────────\n⚠️ Questo comando funziona solo nei gruppi.");
 
     const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {});
+    if (!chat.whitelist) chat.whitelist = [];
+
     const action = text ? text.toLowerCase().trim() : '';
 
-    if (action === 'on') {
-        chat.antinuke = true;
-        return m.reply(`${legamHeader}\n\n『 🛡️ 』 \`𝐒𝐢𝐬𝐭𝐞𝐦𝐚 𝐝𝐢 𝐝𝐢𝐟𝐞𝐬𝐚 𝐚𝐭𝐭𝐢𝐯𝐚𝐭𝐨\`\n_I poteri degli admin sono sotto sorveglianza militare._\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`);
-    } else if (action === 'off') {
-        chat.antinuke = false;
-        return m.reply(`${legamHeader}\n\n『 ❌ 』 \`𝐒𝐢𝐬𝐭𝐞𝐦𝐚 𝐝𝐢𝐬𝐚𝐭𝐭𝐢𝐯𝐚𝐭𝐨\`\n_Il gruppo è ora vulnerabile agli attacchi._\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`);
-    } else {
-        return m.reply(`『 ⚙️ 』 \`Uso corretto:\`\n➤ ${usedPrefix + command} on\n➤ ${usedPrefix + command} off`);
+    // --- LOGICA COMANDI ---
+    if (command === 'antinuke' || command === 'contronuke') {
+        if (!isOwner) return m.reply("❌ Solo l'Owner può attivare il protocollo Anti-Nuke.");
+        if (action === 'on') {
+            chat.antinuke = true;
+            return m.reply(`${legamHeader}\n\n🛡️ *𝐒𝐢𝐬𝐭𝐞𝐦𝐚 𝐝𝐢 𝐝𝐢𝐟𝐞𝐬𝐚 𝐚𝐭𝐭𝐢𝐯𝐚𝐭𝐨*\n_Ogni azione amministrativa non autorizzata comporterà la rimozione immediata degli Admin._\n\n───────────────`);
+        } else if (action === 'off') {
+            chat.antinuke = false;
+            return m.reply(`${legamHeader}\n\n❌ *𝐒𝐢𝐬𝐭𝐞𝐦𝐚 𝐝𝐢𝐬𝐚𝐭𝐭𝐢𝐯𝐚𝐭𝐨*\n_Il gruppo è ora vulnerabile ad attacchi interni._\n\n───────────────`);
+        } else {
+            return m.reply(`*𝐔𝐬𝐨 𝐜𝐨𝐫𝐫𝐞𝐭𝐭𝐨:*\n👉 ${usedPrefix + command} on/off`);
+        }
+    }
+
+    if (command === 'addwhitelist') {
+        if (!isOwner) return m.reply("❌ Solo l'Owner può aggiungere membri alla Whitelist.");
+        let who = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null);
+        if (!who) return m.reply("👉 Taggare l'utente o rispondere a un suo messaggio.");
+        if (chat.whitelist.includes(who)) return m.reply("⚠️ L'utente è già presente nella Whitelist.");
+        chat.whitelist.push(who);
+        return m.reply(`✅ @${who.split('@')[0]} è stato aggiunto alla Whitelist e può operare durante l'Anti-Nuke.`, null, { mentions: [who] });
+    }
+
+    if (command === 'delwhitelist') {
+        if (!isOwner) return m.reply("❌ Solo l'Owner può rimuovere membri dalla Whitelist.");
+        let who = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null);
+        if (!who) return m.reply("👉 Taggare l'utente o rispondere a un suo messaggio.");
+        chat.whitelist = chat.whitelist.filter(u => u !== who);
+        return m.reply(`🗑️ @${who.split('@')[0]} rimosso dalla Whitelist.`, null, { mentions: [who] });
+    }
+
+    if (command === 'resetwhitelist') {
+        if (!isOwner) return m.reply("❌ Solo l'Owner può resettare la Whitelist.");
+        chat.whitelist = [];
+        return m.reply("💥 Whitelist resettata completamente.");
     }
 };
 
-handler.help = ['antinuke on/off'];
-handler.tags = ['gruppo'];
-handler.command = /^(contronuke|antinuke)$/i;
-handler.owner = true; // Solo l'Owner
-handler.group = true;
-
-// ==========================================
-// 🚨 RADAR INVISIBILE
-// ==========================================
 handler.before = async function (m, { conn, isBotAdmin }) {
     if (!m.isGroup || !isBotAdmin) return;
 
     const chat = global.db.data.chats[m.chat];
     if (!chat?.antinuke) return;
 
-    // 21 = Nome, 22 = Foto, 29 = Promozione, 30 = Retrocessione
     const stub = m.messageStubType;
     if (![21, 22, 29, 30].includes(stub)) return;
 
     let meta = await conn.groupMetadata(m.chat).catch(_ => null);
     if (!meta) return;
 
-    const getNum = (jid) => (jid || '').split('@')[0].split(':')[0];
-    
-    const senderNum = getNum(m.key?.participant || m.participant || m.sender);
-    const botNum = getNum(conn.user.id || conn.user.jid);
-    const founderNum = getNum(meta.owner);
-    const ownersNum = global.owner.map(o => getNum(o[0]));
+    const sender = m.key?.participant || m.participant || m.sender;
+    const botId = conn.user.id.split(':')[0] + '@s.whatsapp.net';
+    const founder = meta.owner;
+    const owners = global.owner.map(o => o[0] + '@s.whatsapp.net');
+    const whitelist = chat.whitelist || [];
 
-    // 🛡️ IMMUNITÀ
-    if (senderNum === botNum || senderNum === founderNum || ownersNum.includes(senderNum)) return;
+    // 🛡️ IMMUNITÀ (Bot, Founder, Owners, Whitelist)
+    if (sender === botId || sender === founder || owners.includes(sender) || whitelist.includes(sender)) return;
 
-    // ❌ TRADIMENTO RILEVATO ❌
-    // Raccoglie tutti gli admin attuali tranne Bot, Founder e Owners
+    // ❌ AZIONE NON AUTORIZZATA ❌
+    // Retrocessione di tutti gli Admin sospetti
     const adminsToDemote = meta.participants
         .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
         .map(p => p.id)
         .filter(jid => {
-            let jNum = getNum(jid);
-            return jNum !== botNum && jNum !== founderNum && !ownersNum.includes(jNum);
+            return jid !== botId && jid !== founder && !owners.includes(jid) && !whitelist.includes(jid);
         });
 
-    // 1. Taglia le teste
+    // Esecuzione protocollo sicurezza
     if (adminsToDemote.length > 0) {
         try { await conn.groupParticipantsUpdate(m.chat, adminsToDemote, 'demote'); } catch (e) {}
     }
-
-    // 2. Lockdown
     try { await conn.groupSettingUpdate(m.chat, 'announcement'); } catch (e) {}
 
-    const actionName = stub === 21 ? 'Ha modificato il nome del gruppo' :
-                       stub === 22 ? 'Ha cambiato l\'icona del gruppo' :
-                       stub === 29 ? 'Ha promosso un utente senza permesso' :
-                       'Ha retrocesso un Admin senza permesso';
+    const actionName = stub === 21 ? 'Ha modificato il nome' :
+                       stub === 22 ? 'Ha cambiato l\'icona' :
+                       stub === 29 ? 'Ha promosso un utente' :
+                       'Ha retrocesso un Admin';
 
-    // 3. Sentenza Estetica
-    const alertText = `${legamHeader}\n\n🚨 \`𝐀𝐙𝐈𝐎𝐍𝐄 𝐍𝐎𝐍 𝐀𝐔𝐓𝐎𝐑𝐈𝐙𝐙𝐀𝐓𝐀\`\n\n👤 𝐂𝐨𝐥𝐩𝐞𝐯𝐨𝐥𝐞: @${senderNum} _(Cu tu detti u permessu?)_\n🛑 𝐀𝐳𝐢𝐨𝐧𝐞: ${actionName}\n\n🔻 \`𝐀𝐝𝐦𝐢𝐧 𝐫𝐞𝐭𝐫𝐨𝐜𝐞𝐬𝐬𝐢 𝐩𝐞𝐫 𝐬𝐢𝐜𝐮𝐫𝐞𝐳𝐳𝐚:\`\n${adminsToDemote.length > 0 ? adminsToDemote.map(jid => `💀 @${getNum(jid)}`).join('\n') : 'Nessun altro admin da punire.'}\n\n🔒 \`𝐈𝐥 𝐠𝐫𝐮𝐩𝐩𝐨 è 𝐬𝐭𝐚𝐭𝐨 𝐜𝐡𝐢𝐮𝐬𝐨 𝐢𝐧 𝐋𝐨𝐜𝐤𝐝𝐨𝐰𝐧.\`\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
+    // Costruzione messaggio con Fix Tag nomi
+    const alertText = `${legamHeader}
 
-    let mentionsArr = [m.sender, ...adminsToDemote];
+🚨 *𝐀𝐙𝐈𝐎𝐍𝐄 𝐍𝐎𝐍 𝐀𝐔𝐓𝐎𝐑𝐈𝐙𝐙𝐀𝐓𝐀*
+
+👤 *𝐄𝐬𝐞𝐜𝐮𝐭𝐨𝐫𝐞:* @${sender.split('@')[0]}
+🛑 *𝐀𝐳𝐢𝐨𝐧𝐞:* ${actionName}
+
+🔻 *𝐑𝐞𝐭𝐫𝐨𝐜𝐞𝐬𝐬𝐢𝐨𝐧𝐞 𝐝𝐢 𝐦𝐚𝐬𝐬𝐚:*
+${adminsToDemote.length > 0 ? adminsToDemote.map(jid => `• @${jid.split('@')[0]}`).join('\n') : '_Nessun admin rilevato_'}
+
+🔒 *𝐋𝐨𝐜𝐤𝐝𝐨𝐰𝐧:* _Il gruppo è stato chiuso._
+───────────────`.trim();
+
+    let mentionsArr = [sender, ...adminsToDemote];
     
     await conn.sendMessage(m.chat, { 
         text: alertText, 
@@ -87,14 +116,18 @@ handler.before = async function (m, { conn, isBotAdmin }) {
             isForwarded: true,
             forwardingScore: 999,
             forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363428220415117@newsletter',
+                newsletterJid: '120363233544482011@newsletter',
                 serverMessageId: 100,
-                newsletterName: "🚨 LEGAM OS SECURITY"
+                newsletterName: "🛡️ 𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐞𝐜𝐮𝐫𝐢𝐭𝐲"
             }
         }
     });
 };
 
+handler.help = ['antinuke on/off', 'addwhitelist @user', 'delwhitelist @user'];
+handler.tags = ['gruppo'];
+handler.command = /^(contronuke|antinuke|addwhitelist|delwhitelist|resetwhitelist)$/i;
+handler.owner = true;
+handler.group = true;
+
 export default handler;
-
-
