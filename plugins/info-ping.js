@@ -1,49 +1,53 @@
 import { performance } from 'perf_hooks'
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn }) => {
     let old = performance.now()
+    
+    // Uptime
     let _uptime = process.uptime() * 1000
     let uptime = clockString(_uptime)
     
-    // Manteniamo il formato richiesto 000.x (es: 012.4)
-    let speed = (performance.now() - old).toFixed(1).padStart(5, '0')
+    // Latenza ad alta precisione 0.000x
+    let speed = (performance.now() - old).toFixed(4)
 
-    // Corpo principale del messaggio
-    let bodyText = `╭━━━━━━━━━━━━━━━━━━━╮
-┃   🚀  *𝐏𝐈𝐍𝐆 𝐍𝐄𝐖 𝐄𝐑𝐀* ┃
-╰━━━━━━━━━━━━━━━━━━━╯
+    // Testuale super minimal richiesto
+    let txt = `⏳ *𝐔𝐩𝐭𝐢𝐦𝐞:* ${uptime}\n⚡ *𝐏𝐢𝐧𝐠:* ${speed} 𝐦𝐬`.trim()
 
-⏳ *𝗨𝗽𝘁𝗶𝗺𝗲:* ${uptime}
-⚡ *𝗥𝗶𝘀𝗽𝗼𝘀𝘁𝗮:* ${speed} ms
-📊 *𝗦𝘁𝗮𝘁𝘂𝘀:* 🟢 Online`.trim()
+    // Cattura immagine profilo del bot (o immagine default New Era se fallisce)
+    let profilePicture;
+    try { 
+        profilePicture = await conn.profilePictureUrl(conn.user.jid, 'image'); 
+    } catch (e) { 
+        profilePicture = 'https://files.catbox.moe/pyp87f.jpg'; 
+    }
 
-    // Struttura Messaggio Interattivo per avere il "Vero Footer" grigio nativo di WhatsApp
-    const msg = {
-        viewOnceMessage: {
-            message: {
-                interactiveMessage: {
-                    header: {
-                        hasMediaAttachment: false
-                    },
-                    body: {
-                        text: bodyText
-                    },
-                    footer: {
-                        text: "𝐍𝐄𝐖 𝐄𝐑𝐀 • Sempre attivo"
-                    },
-                    nativeFlowMessage: {
-                        buttons: [] // Lasciato vuoto intenzionalmente per avere solo testo e footer
-                    }
-                }
+    const getBuffer = async (url) => {
+        try { 
+            const res = await fetch(url); 
+            return Buffer.from(await res.arrayBuffer()); 
+        } catch (e) { return null; }
+    };
+    let imageBuffer = await getBuffer(profilePicture);
+
+    // Invio con meccanica AdReply (Quadrato laterale)
+    await conn.sendMessage(m.chat, {
+        text: txt,
+        contextInfo: {
+            externalAdReply: {
+                title: `🚀 𝐏𝐈𝐍𝐆: ${speed} 𝐦𝐬`, // Ping nel quadrato
+                body: '𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐲𝐬𝐭𝐞𝐦',
+                thumbnail: imageBuffer,
+                mediaType: 1, // 1 = Miniatura sfocata a lato
+                renderLargerThumbnail: false,
+                sourceUrl: null
             }
         }
-    };
-
-    await conn.relayMessage(m.chat, msg, {});
+    }, { quoted: m })
 }
 
 handler.help = ['ping']
-handler.tags = ['main']
+handler.tags = ['info']
 handler.command = ['ping']
 
 export default handler
