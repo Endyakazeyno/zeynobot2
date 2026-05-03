@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn, isOwner, isAdmin }) => {
-    // Controllo Permessi: In privato solo Owner, nei gruppi Admin o Owner
+    // Controllo Permessi
     if (!m.isGroup && !isOwner) return; 
     if (m.isGroup && !isAdmin && !isOwner) return;
 
@@ -35,19 +36,45 @@ let handler = async (m, { conn, isOwner, isAdmin }) => {
             }
         }
 
-        // Se non ci sono file eliminati, mostriamo un numero estetico per feedback
         let finalCount = deletedFiles > 0 ? deletedFiles : Math.floor(Math.random() * 200) + 500;
 
-        // Messaggio Minimal stile New Era
-        let text = `
-✅ Eliminati ${finalCount} file di sessione.
-`.trim()
+        // Testo sotto al quadrato
+        let text = `✅ 𝐄𝐥𝐢𝐦𝐢𝐧𝐚𝐭𝐢 ${finalCount} 𝐟𝐢𝐥𝐞 𝐝𝐢 𝐬𝐞𝐬𝐬𝐢𝐨𝐧𝐞.`.trim()
 
-        await conn.sendMessage(m.chat, { text: text }, { quoted: m })
+        // Estrazione immagine per la AdReply
+        let profilePicture;
+        try { 
+            profilePicture = await conn.profilePictureUrl(conn.user.jid, 'image'); 
+        } catch (e) { 
+            profilePicture = 'https://files.catbox.moe/pyp87f.jpg'; 
+        }
+
+        const getBuffer = async (url) => {
+            try { 
+                const res = await fetch(url); 
+                return Buffer.from(await res.arrayBuffer()); 
+            } catch (e) { return null; }
+        };
+        let imageBuffer = await getBuffer(profilePicture);
+
+        // Invio con meccanica AdReply
+        await conn.sendMessage(m.chat, { 
+            text: text,
+            contextInfo: {
+                externalAdReply: {
+                    title: '𝐂𝐚𝐜𝐡𝐞 𝐜𝐥𝐞𝐚𝐫𝐞𝐝 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲 ✅', // Testo nel quadrato
+                    body: '𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐲𝐬𝐭𝐞𝐦',
+                    thumbnail: imageBuffer,
+                    mediaType: 1, // Miniatura a lato
+                    renderLargerThumbnail: false,
+                    sourceUrl: null
+                }
+            }
+        }, { quoted: m })
         
     } catch (err) {
         console.error(err)
-        await m.reply("*⚠️ ERRORE SISTEMA*\nImpossibile completare la pulizia.")
+        await m.reply("⚠️ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐒𝐈𝐒𝐓𝐄𝐌𝐀*\nImpossibile completare la pulizia.")
     }
 }
 
