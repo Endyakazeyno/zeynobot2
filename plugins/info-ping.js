@@ -17,7 +17,7 @@ let handler = async (m, { conn }) => {
 ⚡ *𝗥𝗶𝘀𝗽𝗼𝘀𝘁𝗮:* ${speed} ms
 📊 *𝗦𝘁𝗮𝘁𝘂𝘀:* 🟢 Online
 
-*𝐍𝐄𝐖 𝐄𝐑𝐀* - Sempre attivo`.trim()
+`.trim()
 
     await m.reply(txt)
 }
