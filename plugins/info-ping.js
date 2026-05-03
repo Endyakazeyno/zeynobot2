@@ -14,7 +14,7 @@ let handler = async (m, { conn }) => {
     // Testuale super minimal richiesto
     let txt = `⏳ *𝐔𝐩𝐭𝐢𝐦𝐞:* ${uptime}\n⚡ *𝐏𝐢𝐧𝐠:* ${speed} 𝐦𝐬`.trim()
 
-    // Cattura immagine profilo del bot (o immagine default New Era se fallisce)
+    // Cattura immagine profilo del bot
     let profilePicture;
     try { 
         profilePicture = await conn.profilePictureUrl(conn.user.jid, 'image'); 
@@ -30,15 +30,17 @@ let handler = async (m, { conn }) => {
     };
     let imageBuffer = await getBuffer(profilePicture);
 
-    // Invio con meccanica AdReply (Quadrato laterale)
+    // Invio con meccanica AdReply + Inoltro Canale
     await conn.sendMessage(m.chat, {
         text: txt,
         contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
             externalAdReply: {
-                title: `🚀 𝐏𝐈𝐍𝐆: ${speed} 𝐦𝐬`, // Ping nel quadrato
+                title: `🚀 𝐏𝐈𝐍𝐆: ${speed} 𝐦𝐬`, 
                 body: '𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐲𝐬𝐭𝐞𝐦',
                 thumbnail: imageBuffer,
-                mediaType: 1, // 1 = Miniatura sfocata a lato
+                mediaType: 1, 
                 renderLargerThumbnail: false,
                 sourceUrl: null
             }
