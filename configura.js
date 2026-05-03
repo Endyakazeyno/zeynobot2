@@ -10,12 +10,11 @@ const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 global.prefisso = '.' 
 global.sam = ['393200511388']
 
-// Lista Owner Aggiornata
 global.owner = [
-  ['393792766669', 'diego', true],
+  ['', '', true],
   ['393200511388', 'giuse', true],
-  ['35699995701', 'nahx', true],
-  ['393701330693', 'blood', true]
+  ['', '', true],
+  ['', '', true]
 ]
 
 global.mods = ['393200511388', '393792766669']
