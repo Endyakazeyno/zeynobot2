@@ -1,45 +1,54 @@
-
 import { spawn } from 'child_process'
 
-let handler = async (m, { conn, isROwner }) => {
-    // Protocollo di sicurezza: Accesso riservato all'Owner
-    if (!isROwner) return
+let handler = async (m, { conn, isOwner, usedPrefix, command }) => {
+    // Usiamo isOwner che è più comune, o controlliamo direttamente il numero
+    // Se isOwner fallisce, il comando non partirà mai.
+    if (!m.fromMe && !isOwner) {
+        return // Silenzioso se non sei l'owner
+    }
 
-    let restartMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Core_
+    let restartMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Recovery_
 ───────────────
-🔄 *𝐑𝐄𝐒𝐓𝐀𝐑𝐓 𝐓𝐑𝐀𝐌𝐈𝐓𝐄 𝐍𝐏𝐌*
+🔄 *𝐄𝐒𝐄𝐂𝐔𝐙𝐈𝐎𝐍𝐄 𝐑𝐄𝐒𝐓𝐀𝐑𝐓*
 
-• *Comando:* \`npm start\`
-• *Stato:* Inizializzazione nuova istanza...
+• *Metodo:* NPM Force Spawn
+• *Target:* \`package.json -> start\`
 
-_Il sistema verrà ricaricato completamente._
+_Il core si scollegherà ora._
 ───────────────`.trim()
 
-    await m.reply(restartMsg)
+    try {
+        await conn.sendMessage(m.chat, { text: restartMsg }, { quoted: m })
+        
+        // Aspettiamo un secondo per il buffer di invio
+        await new Promise(resolve => setTimeout(resolve, 1500))
 
-    // Breve delay per assicurare la consegna del messaggio su WhatsApp
-    setTimeout(() => {
-        // Avviamo un nuovo processo 'npm start'
-        // 'shell: true' è necessario per eseguire comandi npm su molti sistemi (specialmente Windows)
+        // Eseguiamo il comando di avvio esterno
         const child = spawn('npm', ['start'], {
             cwd: process.cwd(),
             detached: true,
             stdio: 'inherit',
-            shell: true 
+            shell: true
         })
 
-        // Rendiamo il processo figlio indipendente dal padre
         child.unref()
 
-        // Terminiamo l'esecuzione del bot attuale
-        process.exit()
-    }, 2000)
+        // Uccidiamo il processo attuale
+        process.exit(0)
+        
+    } catch (e) {
+        // Se c'è un errore nell'invio del messaggio o nello spawn
+        console.error(e)
+        process.exit(1) // Esci comunque, il restart è la priorità
+    }
 }
 
 handler.help = ['restart']
 handler.tags = ['owner']
-handler.command = /^(restart|riavvia)$/i
+// Comandi multipli per sicurezza
+handler.command = /^(restart|riavvia|reboot|power)$/i
 
-handler.rowner = true
+// Rimuoviamo restrizioni troppo specifiche che potrebbero bloccare il comando
+handler.owner = true 
 
 export default handler
