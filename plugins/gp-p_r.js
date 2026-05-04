@@ -19,13 +19,13 @@ let handler = async (m, { conn, text, command, isOwner, isAdmin }) => {
     }
 
     if (!hasPower) {
-        return m.reply("*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System_\n───────────────\n⚠️ Accesso negato: Solo lo Staff può eseguire questa azione.");
+        return m.reply("𝐍𝐄𝐖 𝐄𝐑𝐀 • _System_\n───────────────\n⚠️ Accesso negato: Solo lo Staff può eseguire questa azione.");
     }
 
     
     const chat = global.db.data.chats[m.chat] || {};
     if (chat.antinuke && !isOwner) {
-        let deniedMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Security Override_\n───────────────\n🛡️ *Stato:* Antinuke Attivo\n⚠️ *Blocco:* Le modifiche gerarchiche sono bloccate. Solo l'Owner può intervenire.`;
+        let deniedMsg = `𝐍𝐄𝐖 𝐄𝐑𝐀 • _Security Override_\n───────────────\n🛡️ *Stato:* Antinuke Attivo\n⚠️ *Blocco:* Le modifiche gerarchiche sono bloccate. Solo l'Owner può intervenire.`;
         return m.reply(deniedMsg);
     }
 
@@ -71,8 +71,8 @@ handler.before = async function (m, { conn }) {
     let promotedUsername = getNum(targetUser);
     let senderUsername = executorNum;
 
-    let titleStr = isPromote ? '👑 𝐏𝐑𝐎𝐌𝐎𝐙𝐈𝐎𝐍𝐄' : '🔻 𝐑𝐄𝐓𝐑𝐎𝐂𝐄𝐒𝐒𝐈𝐎𝐍𝐄';
-    let actionTxt = isPromote ? '𝐩𝐫𝐨𝐦𝐨𝐬𝐬𝐨 𝐚 𝐫𝐮𝐨𝐥𝐨 𝐝𝐢 𝐚𝐦𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚𝐭𝐨𝐫𝐞 ' : '𝐫𝐞𝐭𝐫𝐨𝐜𝐞𝐬𝐬𝐨 ';
+    let titleStr = isPromote ? '👑 𝐏𝐫𝐨𝐦𝐨𝐳𝐢𝐨𝐧𝐞' : '🔻 𝐑𝐞𝐭𝐫𝐨𝐜𝐞𝐬𝐬𝐢𝐨𝐧𝐞 ';
+    let actionTxt = isPromote ? '𝐩𝐫𝐨𝐦𝐨𝐬𝐬𝐨 𝐚 𝐫𝐮𝐨𝐥𝐨 𝐝𝐢 𝐚𝐦𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚𝐭𝐨𝐫𝐞 ' : '𝐫𝐞𝐯𝐨𝐜𝐚𝐭𝐨 𝐢 𝐩𝐨𝐭𝐞𝐫𝐢 𝐚 ';
 
     let finalMessage = `𝐔𝐭𝐞𝐧𝐭𝐞 @${senderUsername} 𝐡𝐚 ${actionTxt} @${promotedUsername}.
 `.trim();
