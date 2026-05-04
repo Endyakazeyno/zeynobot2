@@ -76,12 +76,8 @@ handler.before = async function (m, { conn }) {
     let titleStr = isPromote ? '👑 𝐏𝐑𝐎𝐌𝐎𝐙𝐈𝐎𝐍𝐄' : '🔻 𝐑𝐄𝐓𝐑𝐎𝐂𝐄𝐒𝐒𝐈𝐎𝐍𝐄';
     let actionTxt = isPromote ? 'Nominato Amministratore' : 'Privilegi Revocati';
 
-    let finalMessage = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Hierarchy Update_
-───────────────
-• *Utente:* @${promotedUsername}
-• *Azione:* ${actionTxt}
-• *Eseguito da:* @${senderUsername}
-───────────────`.trim();
+    let finalMessage = `𝐔𝐭𝐞𝐧𝐭𝐞  @${senderUsername} 𝐡𝐚 ${actionTxt} @${promotedUsername}.
+`.trim();
 
     let profilePicture;
     try { profilePicture = await conn.profilePictureUrl(targetUser, 'image'); } 
