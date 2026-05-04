@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 let handler = async (m, { conn, text, command, isOwner, isAdmin }) => {
     if (!m.isGroup) return;
 
-    // 🔥 CONTROLLO POTERI IN TEMPO REALE
+    
     let hasPower = isAdmin || isOwner;
     
     if (!hasPower) {
@@ -22,7 +22,7 @@ let handler = async (m, { conn, text, command, isOwner, isAdmin }) => {
         return m.reply("*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System_\n───────────────\n⚠️ Accesso negato: Solo lo Staff può eseguire questa azione.");
     }
 
-    // 🔥 CONTROLLO ANTINUKE & GERARCHIA
+    
     const chat = global.db.data.chats[m.chat] || {};
     if (chat.antinuke && !isOwner) {
         let deniedMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Security Override_\n───────────────\n🛡️ *Stato:* Antinuke Attivo\n⚠️ *Blocco:* Le modifiche gerarchiche sono bloccate. Solo l'Owner può intervenire.`;
@@ -41,7 +41,7 @@ let handler = async (m, { conn, text, command, isOwner, isAdmin }) => {
 
     if (!targetUser) return m.reply("*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Input Error_\n───────────────\n👉 Tagga o rispondi all'utente bersaglio.");
 
-    // 🔥 AZIONE DIRETTA
+    
     try {
         await conn.groupParticipantsUpdate(m.chat, [targetUser], action);
     } catch (e) {
@@ -50,9 +50,7 @@ let handler = async (m, { conn, text, command, isOwner, isAdmin }) => {
     }
 };
 
-// =========================================================
-// L'INTERCETTATORE GLOBALE (Banner Visivo con AdReply & Newsletter)
-// =========================================================
+
 handler.before = async function (m, { conn }) {
     if (!m.isGroup || !m.messageStubType) return true;
     if (m.messageStubType !== 29 && m.messageStubType !== 30) return true;
