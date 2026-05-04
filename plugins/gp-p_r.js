@@ -74,7 +74,7 @@ handler.before = async function (m, { conn }) {
     let titleStr = isPromote ? '👑 𝐏𝐑𝐎𝐌𝐎𝐙𝐈𝐎𝐍𝐄' : '🔻 𝐑𝐄𝐓𝐑𝐎𝐂𝐄𝐒𝐒𝐈𝐎𝐍𝐄';
     let actionTxt = isPromote ? '𝐩𝐫𝐨𝐦𝐨𝐬𝐬𝐨 𝐚 𝐫𝐮𝐨𝐥𝐨 𝐝𝐢 𝐚𝐦𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚𝐭𝐨𝐫𝐞 ' : '𝐫𝐞𝐭𝐫𝐨𝐜𝐞𝐬𝐬𝐨 ';
 
-    let finalMessage = `𝐔𝐭𝐞𝐧𝐭𝐞  @${senderUsername} 𝐡𝐚 ${actionTxt} @${promotedUsername}.
+    let finalMessage = `𝐔𝐭𝐞𝐧𝐭𝐞 @${senderUsername} 𝐡𝐚 ${actionTxt} @${promotedUsername}.
 `.trim();
 
     let profilePicture;
