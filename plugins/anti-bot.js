@@ -28,7 +28,7 @@ export async function before(m, { conn, isAdmin, isOwner, isSam }) {
   if (autorizzati.includes(m.sender)) return;
   await conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove');
   await conn.sendMessage(m.chat, {
-    text: `『 🚫 』 \`Bot rilevato\`\n\n➤ \`Utente:\` @${m.sender.split('@')[0]}\n➤ \`Azione:\` Rimosso dal gruppo\n➤ \`Dispositivo:\` ${device.toUpperCase()}\n\n\`vare ✧ bot\``,
+    text: `『 🚫 』 \`Bot rilevato\`\n\n➤ \`Utente:\` @${m.sender.split('@')[0]}\n➤ \`Azione:\` Rimosso dal gruppo\n➤ \`Dispositivo:\` ${device.toUpperCase()}\n\n\`newera\``,
     mentions: [m.sender]
   });
 }
