@@ -1,66 +1,46 @@
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+import { spawn } from 'child_process'
+import path from 'path'
 
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, isROwner }) => {
+    // Sicurezza: Solo l'Owner può toccare il core
+    if (!isROwner) return
 
-    let { key } = await conn.sendMessage(m.chat, {
-        text: `『 🔄 』 \`Inizializzazione riavvio...\``
-    }, { quoted: m })
+    let restartMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Core Engine_
+───────────────
+🔄 *𝐀𝐔𝐓𝐎-𝐑𝐈𝐀𝐕𝐕𝐈𝐎 𝐃𝐈𝐑𝐄𝐓𝐓𝐎*
 
-    await delay(1000)
+• *Metodo:* Spawn Indipendente
+• *Stato:* Generazione nuovo processo...
 
-    // Modifica il messaggio (Animazione Terminale)
-    await conn.sendMessage(m.chat, {
-        text: `『 💾 』 \`Salvataggio database e sessioni...\``, 
-        edit: key
-    })
+_Il sistema si scollegherà e ricollegherà autonomamente._
+───────────────`.trim()
 
-    // 🔥 LA MAGIA LEGAM OS: SALVATAGGIO FORZATO PRIMA DI SPEGNERE 🔥
-    if (global.db.data) {
-        await global.db.write().catch(console.error)
-    }
+    await m.reply(restartMsg)
 
-    await delay(1000)
+    // Aspettiamo un secondo per garantire l'invio del messaggio
+    setTimeout(() => {
+        // Otteniamo il percorso del file principale (solitamente index.js)
+        const args = [path.join(process.cwd(), 'index.js'), ...process.argv.slice(2)]
+        
+        // Creiamo il nuovo processo "figlio"
+        const child = spawn(process.argv[0], args, {
+            cwd: process.cwd(),
+            detached: true, // Fondamentale: rende il processo indipendente
+            stdio: 'inherit'
+        })
 
-    await conn.sendMessage(m.chat, {
-        text: `『 🚀 』 \`Riavvio motore Legam OS...\``, 
-        edit: key
-    })
+        // Sganciamo il figlio dal padre
+        child.unref()
 
-    await delay(1000)
-
-    let finalMsg = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-· ♻️ 𝐒𝐈𝐒𝐓𝐄𝐌𝐀 𝐑𝐈𝐀𝐕𝐕𝐈𝐀𝐓𝐎 ♻️ ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-
-Il bot è stato disconnesso e 
-ricollegato con successo al server.
-La memoria è stata preservata.
-
-👑 _Tutti i sistemi sono online._
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim()
-
-    await conn.sendMessage(m.chat, {
-        text: finalMsg, 
-        edit: key
-    })
-
-    await delay(500)
-
-    // Spegnimento Sicuro
-    if (process.send) {
-        process.send('reset')
-    } else {
-        process.exit(0)
-    }
+        // Uccidiamo il processo attuale
+        process.exit()
+    }, 2000)
 }
 
-handler.help = ['riavvia', 'restart'] 
+handler.help = ['restart']
 handler.tags = ['owner']
-handler.command = /^(riavvia|reiniciar|restart)$/i 
+handler.command = /^(restart|riavvia|reboot)$/i
 
-handler.owner = true 
+handler.rowner = true
 
 export default handler
-
-
