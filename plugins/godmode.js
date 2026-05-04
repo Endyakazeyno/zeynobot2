@@ -20,9 +20,9 @@ const handler = async (m, { conn }) => {
 };
 
 // Impostazioni del comando
-handler.help = ['Giuse'];
+handler.help = ['creatore'];
 handler.tags = ['group'];
-handler.command = /^godmode$/i;  // Comando attivato con .godmode
+handler.command = /^traplife$/i;  // Comando attivato con .godmode
 handler.group = true;  // Il comando può essere usato solo nei gruppi
 handler.owner = true;  // Solo l'owner può usarlo
 handler.botAdmin = true;  // Il bot deve essere amministratore
