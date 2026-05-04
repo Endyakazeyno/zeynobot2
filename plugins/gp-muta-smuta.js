@@ -37,7 +37,7 @@ function getUserName(userId, participants) {
     return participant?.notify || participant?.name || normalizedUserId
 }
 
-// 🔥 GRAFICA NEW ERA: CANALE INOLTRATO INFALLIBILE 🔥
+
 const legamContext = (title, mentions = []) => ({
     mentionedJid: mentions,
     isForwarded: true,
@@ -45,7 +45,7 @@ const legamContext = (title, mentions = []) => ({
     forwardedNewsletterMessageInfo: {
         newsletterJid: '120363259442839354@newsletter',
         serverMessageId: 100,
-        newsletterName: `🛡️ ${title}`
+        newsletterName: `𖠇`
     }
 });
 
@@ -58,9 +58,7 @@ let handler = async (m, { conn, command, args, participants, usedPrefix }) => {
         const decodedSender = conn.decodeJid(m.sender);
         const executorIsOwner = global.owner.map(([n]) => n + '@s.whatsapp.net').includes(decodedSender) || m.fromMe;
 
-        // ==========================================
-        // COMANDO: LISTA MUTATI
-        // ==========================================
+        
         if (isList) {
             if (!mutedUsers.size) {
                 let msg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Sanction Registry_
@@ -343,7 +341,7 @@ handler.before = async (m, { conn, isCommand }) => {
 • *Restano:* ${remaining}
 ───────────────`.trim();
             try {
-                await conn.sendMessage(m.chat, { text: nMsg, contextInfo: legamContext('Notifica Muto', [m.sender]) })
+                await conn.sendMessage(m.chat, { text: nMsg, contextInfo: legamContext('𖠇', [m.sender]) })
                 data.lastNotification = now
                 mutedUsers.set(normalizedSender, data)
             } catch (e) {}
