@@ -32,7 +32,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
       contextInfo: {
           mentionedJid: [who],
           externalAdReply: {
-              title: '𝐋𝐄𝐆𝐀𝐌 𝐀𝐔𝐓𝐇𝐎𝐑𝐈𝐓𝐘',
+              title: '𝐍𝐄𝐖𝐄𝐑𝐀 𝐀𝐔𝐓𝐇𝐎𝐑𝐈𝐓𝐘',
               body: 'Grado VIP Revocato',
               thumbnailUrl: ppUrl,
               mediaType: 1,
