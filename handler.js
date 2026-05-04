@@ -480,12 +480,12 @@ export async function handler(chatUpdate) {
 
 global.dfail = async (type, m, conn) => {
     const msg = {
-        rowner:   '[newera] - RANGO INSUFFICIENTE\nRichiesto: Owner',
-        owner:    '[newera] - ACCESSO RISERVATO\nComando riservato agli sviluppatori.',
-        premium:  '[newera] - CONTENUTO ESCLUSIVO\nPassa a Premium per sbloccare questa funzione.',
-        group:    '[newera] - ERRORE AMBIENTE\nEsegui questo comando all\'interno di un gruppo.',
-        admin:    '[newera] - AZIONE ADMIN\nNon hai i permessi di amministratore per usare questo comando.',
-        botAdmin: '[newera] - ERRORE DI SISTEMA\nPromuovimi ad Admin per permettermi di agire.'
+        rowner:   '𖠇 𝐍𝐞𝐰 𝐞𝐫𝐚 𖠇 - 𝐑𝐀𝐍𝐆𝐎 𝐈𝐍𝐒𝐔𝐅𝐅𝐈𝐂𝐈𝐄𝐍𝐓𝐄\n𝐃𝐞𝐯𝐢 𝐞𝐬𝐬𝐞𝐫𝐞 𝐎𝐰𝐧𝐞𝐫 𝐝𝐞𝐥 𝐛𝐨𝐭 𝐩𝐞𝐫 𝐮𝐭𝐢𝐥𝐢𝐳𝐳𝐚𝐫𝐞 𝐪𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨.',
+        owner:    '𖠇 𝐍𝐞𝐰 𝐞𝐫𝐚 𖠇 - 𝐀𝐂𝐂𝐄𝐒𝐒𝐎 𝐑𝐈𝐒𝐄𝐑𝐕𝐀𝐓𝐎\n𝐂𝐨𝐦𝐚𝐧𝐝𝐨 𝐫𝐢𝐬𝐞𝐫𝐯𝐚𝐭𝐨 𝐚𝐠𝐥𝐢 𝐬𝐯𝐢𝐥𝐮𝐩𝐩𝐚𝐭𝐨𝐫𝐢.',
+        premium:  '𖠇 𝐍𝐞𝐰 𝐞𝐫𝐚 𖠇 - 𝐂𝐎𝐍𝐓𝐄𝐍𝐔𝐓𝐎 𝐄𝐒𝐂𝐋𝐔𝐒𝐈𝐕𝐎\n𝐏𝐚𝐬𝐬𝐚 𝐚 𝐏𝐫𝐞𝐦𝐢𝐮𝐦 𝐩𝐞𝐫 𝐬𝐛𝐥𝐨𝐜𝐜𝐚𝐫𝐞 𝐪𝐮𝐞𝐬𝐭𝐚 𝐟𝐮𝐧𝐳𝐢𝐨𝐧𝐞 𝐚𝐡𝐚𝐡𝐡𝐚 𝐬𝐟𝐢𝐠𝐚𝐭𝐨.',
+        group:    '𖠇 𝐍𝐞𝐰 𝐞𝐫𝐚 𖠇 - 𝐄𝐑𝐑𝐎𝐑𝐄 𝐀𝐌𝐁𝐈𝐄𝐍𝐓𝐄\n𝐄𝐬𝐞𝐠𝐮𝐢 𝐪𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐚𝐥𝐥\'𝐢𝐧𝐭𝐞𝐫𝐧𝐨 𝐝𝐢 𝐮𝐧 𝐠𝐫𝐮𝐩𝐩𝐨.',
+        admin:    '𖠇 𝐍𝐞𝐰 𝐞𝐫𝐚 𖠇 - 𝐀𝐙𝐈𝐎𝐍𝐄 𝐀𝐃𝐌𝐈𝐍\n𝐄𝐬𝐞𝐠𝐮𝐢 𝐪𝐮𝐞𝐬𝐭𝐨 𝐜𝐨𝐦𝐚𝐧𝐝𝐨 𝐚𝐥𝐥\'𝐢𝐧𝐭𝐞𝐫𝐧𝐨 𝐝𝐢 𝐮𝐧 𝐠𝐫𝐮𝐩𝐩𝐨.',
+        botAdmin: '𖠇 𝐍𝐞𝐰 𝐞𝐫𝐚 𖠇 - 𝐄𝐑𝐑𝐎𝐑𝐄 𝐃𝐈 𝐒𝐈𝐒𝐓𝐄𝐌𝐀\n𝐃𝐞𝐯𝐢 𝐩𝐫𝐨𝐦𝐮𝐨𝐯𝐞𝐫𝐞 𝐢𝐥 𝐛𝐨𝐭 𝐚𝐝 𝐚𝐦𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚𝐭𝐨𝐫𝐞 𝐩𝐞𝐫 𝐩𝐨𝐭𝐞𝐫 𝐮𝐭𝐢𝐥𝐢𝐳𝐳𝐚𝐫𝐞 𝐪𝐮𝐞𝐬𝐭𝐚 𝐭𝐢𝐩𝐨𝐥𝐨𝐠𝐢𝐚 𝐝𝐢 𝐜𝐨𝐦𝐚𝐧𝐝𝐨.'
     }[type]
 
     if (msg) {
