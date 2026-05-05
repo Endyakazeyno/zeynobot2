@@ -9,7 +9,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 ⚠️ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐒𝐈𝐍𝐓𝐀𝐒𝐒𝐈*
 
 • *Uso:* ${usedPrefix}${command} [testo]
-• *Esempio:* ${usedPrefix}${command} haii maniezz
+• *Esempio:* ${usedPrefix}${command} ciao come stai
 ───────────────`.trim()
         return m.reply(usageMsg)
     }
@@ -18,59 +18,64 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     await m.react('⏳')
 
     try {
-        // Questa API genera la versione ANIMATA (un file MP4)
-        let apiUrl = `https://api.ryzendesu.vip/api/maker/bratVideo?text=${encodeURIComponent(text)}`
+        // API dedicata alla generazione Video (BratVideo) che evita lo sfondo bianco piatto
+        let apiUrl = `https://api.siputzx.my.id/api/maker/brat/animate?text=${encodeURIComponent(text)}`
         let res = await fetch(apiUrl)
         
-        if (!res.ok) throw new Error('API Offline')
+        if (!res.ok) throw new Error('API Error')
         
-        let buffer = await res.arrayBuffer()
-        let buff = Buffer.from(buffer)
+        let buffer = await res.buffer()
 
-        // ==========================================
-        // TENTATIVO 1: CONVERSIONE STICKER NATIVA
-        // ==========================================
-        // Prova a usare il convertitore ffmpeg integrato nel bot per fare un vero sticker
-        try {
-            if (conn.sendVideoAsSticker) {
-                await conn.sendVideoAsSticker(m.chat, buff, m, { packname: '𝐍𝐄𝐖 𝐄𝐑𝐀', author: '𝐒𝐲𝐬𝐭𝐞𝐦' })
-                await m.react('✅')
-                return // Se ha successo, il comando finisce qui.
-            }
-        } catch (e) {
-            console.log("Conversione WebP fallita. Avvio protocollo GIF di emergenza.")
+        // Verifichiamo se il bot ha la funzione per inviare sticker da video
+        // Questa è la funzione più stabile per evitare l'errore "Impossibile scaricare"
+        if (conn.sendFile) {
+            // Inviamo il file come sticker direttamente. 
+            // Il mimetype 'image/webp' con l'estensione corretta forza il rendering dello sticker animato.
+            await conn.sendFile(m.chat, buffer, 'brat.webp', '', m, { 
+                asSticker: true,
+                packname: '𝐍𝐄𝐖 𝐄𝐑𝐀',
+                author: '𝐒𝐲𝐬𝐭𝐞𝐦'
+            })
+        } else {
+            // Fallback manuale se sendFile non è disponibile
+            await conn.sendMessage(m.chat, { 
+                sticker: buffer 
+            }, { quoted: m })
         }
-
-        // ==========================================
-        // TENTATIVO 2: FALLBACK GIF INFALLIBILE
-        // ==========================================
-        // Se il bot non riesce a convertirlo, lo invia come video a riproduzione automatica (GIF).
-        // Questo risolve il problema dello screen 1 ed è identico allo screen 2.
-        await conn.sendMessage(m.chat, { 
-            video: buff, 
-            gifPlayback: true, // Lo fa riprodurre in loop automatico come uno sticker
-            caption: `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Brat Engine_`
-        }, { quoted: m })
 
         await m.react('✅')
 
     } catch (e) {
-        // Messaggio di errore New Era
-        let errorMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Error_
+        console.error(e)
+        // Tentativo di emergenza con API alternativa se la prima fallisce
+        try {
+            let fallbackUrl = `https://aqul-api.vercel.app/api/bratvideo?text=${encodeURIComponent(text)}`
+            let res2 = await fetch(fallbackUrl)
+            let buffer2 = await res2.buffer()
+            
+            await conn.sendMessage(m.chat, { 
+                video: buffer2, 
+                gifPlayback: true,
+                caption: `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Brat Recovery_`
+            }, { quoted: m })
+            
+            await m.react('✅')
+        } catch (err) {
+            let errorMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Error_
 ───────────────
 ❌ *𝐆𝐄𝐍𝐄𝐑𝐀𝐙𝐈𝐎𝐍𝐄 𝐅𝐀𝐋𝐋𝐈𝐓𝐀*
 
-• *Dettaglio:* Impossibile contattare il server di rendering grafico.
-• *Azione:* Riprova tra qualche minuto.
+• *Dettaglio:* Errore nel rendering del buffer video.
+• *Azione:* Prova con un testo più breve.
 ───────────────`.trim()
-        await m.reply(errorMsg)
-        await m.react('❌')
+            await m.reply(errorMsg)
+            await m.react('❌')
+        }
     }
 }
 
-handler.help = ['csticker <testo>', 'brat <testo>']
+handler.help = ['csticker <testo>']
 handler.tags = ['sticker']
-// Si attiva sia con .csticker che con .brat
-handler.command = /^(csticker|brat)$/i
+handler.command = /^(csticker|brat|stickerbrat)$/i
 
 export default handler
