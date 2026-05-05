@@ -18,50 +18,53 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     await m.react('⏳')
 
     try {
-        // API Primaria: Genera direttamente il WebP animato in stile "Brat"
-        let apiUrl = `https://api.siputzx.my.id/api/maker/brat?text=${encodeURIComponent(text)}`
+        // Questa API genera la versione ANIMATA (un file MP4)
+        let apiUrl = `https://api.ryzendesu.vip/api/maker/bratVideo?text=${encodeURIComponent(text)}`
         let res = await fetch(apiUrl)
         
-        if (!res.ok) throw new Error('Primary API Offline')
+        if (!res.ok) throw new Error('API Offline')
         
         let buffer = await res.arrayBuffer()
+        let buff = Buffer.from(buffer)
 
-        // Invio diretto del buffer come sticker
+        // ==========================================
+        // TENTATIVO 1: CONVERSIONE STICKER NATIVA
+        // ==========================================
+        // Prova a usare il convertitore ffmpeg integrato nel bot per fare un vero sticker
+        try {
+            if (conn.sendVideoAsSticker) {
+                await conn.sendVideoAsSticker(m.chat, buff, m, { packname: '𝐍𝐄𝐖 𝐄𝐑𝐀', author: '𝐒𝐲𝐬𝐭𝐞𝐦' })
+                await m.react('✅')
+                return // Se ha successo, il comando finisce qui.
+            }
+        } catch (e) {
+            console.log("Conversione WebP fallita. Avvio protocollo GIF di emergenza.")
+        }
+
+        // ==========================================
+        // TENTATIVO 2: FALLBACK GIF INFALLIBILE
+        // ==========================================
+        // Se il bot non riesce a convertirlo, lo invia come video a riproduzione automatica (GIF).
+        // Questo risolve il problema dello screen 1 ed è identico allo screen 2.
         await conn.sendMessage(m.chat, { 
-            sticker: Buffer.from(buffer) 
+            video: buff, 
+            gifPlayback: true, // Lo fa riprodurre in loop automatico come uno sticker
+            caption: `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Brat Engine_`
         }, { quoted: m })
 
-        // Feedback di successo
         await m.react('✅')
 
     } catch (e) {
-        try {
-            // API Secondaria in caso di fallimento della prima
-            let fallbackUrl = `https://api.ryzendesu.vip/api/maker/brat?text=${encodeURIComponent(text)}`
-            let res2 = await fetch(fallbackUrl)
-            
-            if (!res2.ok) throw new Error('Fallback API Offline')
-            
-            let buffer2 = await res2.arrayBuffer()
-            
-            await conn.sendMessage(m.chat, { 
-                sticker: Buffer.from(buffer2) 
-            }, { quoted: m })
-            
-            await m.react('✅')
-            
-        } catch (err) {
-            // Messaggio di errore New Era se entrambi i server sono giù
-            let errorMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Error_
+        // Messaggio di errore New Era
+        let errorMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Error_
 ───────────────
 ❌ *𝐆𝐄𝐍𝐄𝐑𝐀𝐙𝐈𝐎𝐍𝐄 𝐅𝐀𝐋𝐋𝐈𝐓𝐀*
 
-• *Dettaglio:* I server di rendering grafico sono offline.
-• *Azione:* Riprova più tardi.
+• *Dettaglio:* Impossibile contattare il server di rendering grafico.
+• *Azione:* Riprova tra qualche minuto.
 ───────────────`.trim()
-            await m.reply(errorMsg)
-            await m.react('❌')
-        }
+        await m.reply(errorMsg)
+        await m.react('❌')
     }
 }
 
