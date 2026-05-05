@@ -8,17 +8,17 @@ const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 // --- CONFIGURAZIONE NEWERA ---
 
 global.prefisso = '.' 
-global.sam = ['393200511388']
+global.sam = ['972552451710']
 
 global.owner = [
   ['', '', true],
-  ['393200511388', 'giuse', true],
+  ['972552451710', 'giuse', true],
   ['', '', true],
   ['', '', true]
 ]
 
-global.mods = ['393200511388', '393200511388']
-global.prems = ['393200511388', '393200511388']
+global.mods = ['972552451710', '972552451710']
+global.prems = ['972552451710', '972552451710']
 
 // --- INFO BOT ---
 
