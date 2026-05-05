@@ -14,7 +14,7 @@ let handler = async (m, { conn, args }) => {
 
     try {
 
-        await m.reply('⏳ Scaricando video...');
+        await m.reply('⏳ 𝐒𝐜𝐚𝐫𝐢𝐜𝐨 𝐯𝐢𝐝𝐞𝐨...');
 
         // Risolve redirect vm.tiktok
         const resolved = await axios.get(url, {
@@ -40,13 +40,13 @@ let handler = async (m, { conn, args }) => {
 
         await conn.sendMessage(m.chat, {
             video: { url: data.data.play },
-            caption: `🎥 TikTok scaricato!
+            caption: `🎥 𝐓𝐢𝐤𝐭𝐨𝐤 𝐬𝐜𝐚𝐫𝐢𝐜𝐚𝐭𝐨 𝐜𝐨𝐧 𝐬𝐮𝐜𝐜𝐞𝐬𝐬𝐨!
 
 👤 ${data.data.author.nickname}
-❤️ ${data.data.digg_count} like
-👁️ ${data.data.play_count} views
+❤️ ${data.data.digg_count} 𝐥𝐢𝐤𝐞
+👁️ ${data.data.play_count} 𝐯𝐢𝐞𝐰𝐬
 
-> NEW ERA BOT`
+> 𝐍𝐄𝐖 𝐄𝐑𝐀 𝐁𝐎𝐓`
         }, { quoted: m });
 
     } catch (err) {
