@@ -5,7 +5,7 @@ import fetch from 'node-fetch'
 let handler = async (m, { conn, text, usedPrefix, command }) => {
     // Controllo input New Era
     if (!text) {
-        let usageMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Sticker Engine_
+        let usageMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Elite Sticker Engine_
 ───────────────
 ⚠️ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐒𝐈𝐍𝐓𝐀𝐒𝐒𝐈*
 
@@ -15,59 +15,62 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         return m.reply(usageMsg)
     }
 
-    // Feedback immediato
+    // Feedback immediato per la gara
     await m.react('⏳')
 
     try {
-        // API che genera il video dell'animazione Brat
-        let res = await fetch(`https://api.vreden.my.id/api/brat-animated?text=${encodeURIComponent(text)}`)
-        if (!res.ok) throw new Error('API Error')
-        
+        // API Primaria (Ritorna direttamente il video dell'animazione)
+        let apiUrl = `https://api.vreden.my.id/api/brat-animated?text=${encodeURIComponent(text)}`
+        let res = await fetch(apiUrl)
         let json = await res.json()
-        let videoUrl = json.result // URL del video animato
         
-        if (!videoUrl) throw new Error('No Video URL')
+        let videoUrl = json.result
+        if (!videoUrl) throw new Error('API non ha restituito URL')
 
-        // SCARICHIAMO IL BUFFER DEL VIDEO
-        let response = await fetch(videoUrl)
-        let buffer = await response.buffer()
+        // Scarichiamo il video come buffer
+        let videoRes = await fetch(videoUrl)
+        let videoBuffer = await videoRes.buffer()
 
-        // DEFINIAMO I PACKNAME (usa i tuoi global o quelli di default)
         const packName = global.authsticker || '✧˚⭐️ 𝐍𝐄𝐖 𝐄𝐑𝐀 ⭐️˚✧'
         const authorName = global.nomepack || '✧˚⭐️ 𝐒𝐲𝐬𝐭𝐞𝐦 ⭐️˚✧'
 
-        // USIAMO LA TUA LIBRERIA INTERNA PER CREARE LO STICKER
-        // Questo passaggio è fondamentale per evitare "impossibile scaricare"
-        let stiker = await sticker(buffer, false, packName, authorName)
+        // Creazione sticker usando la tua funzione interna lib/sticker.js
+        // Passiamo il buffer, la funzione sticker si occuperà di FFmpeg
+        let stiker = await sticker(videoBuffer, false, packName, authorName)
 
         if (stiker) {
-            // INVIO TRAMITE IL TUO METODO DI SISTEMA
-            await conn.sendFile(
-                m.chat,
-                stiker,
-                'sticker.webp',
-                '',
-                m,
-                false, // 'false' perché è già un webp pronto
-                { quoted: m }
-            )
+            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, { quoted: m })
             await m.react('✅')
         } else {
-            throw new Error('Sticker processing failed')
+            throw new Error('Funzione sticker ha restituito null')
         }
 
     } catch (e) {
-        console.error(e)
-        // Fallback statico veloce se l'animazione fallisce (per non restare a mani vuote in gara)
+        console.error('Errore Csticker:', e)
+        
+        // FALLBACK DI EMERGENZA - API Secondaria se la prima fallisce
         try {
-            let resStatic = await fetch(`https://api.vreden.my.id/api/brat?text=${encodeURIComponent(text)}`)
-            let jsonStatic = await resStatic.json()
-            let stikerStatic = await sticker(false, jsonStatic.result, global.authsticker, global.nomepack)
-            await conn.sendFile(m.chat, stikerStatic, 'sticker.webp', '', m, false, { quoted: m })
-            await m.react('⚠️')
+            let fallbackRes = await fetch(`https://api.siputzx.my.id/api/maker/brat/animate?text=${encodeURIComponent(text)}`)
+            let fallbackBuffer = await fallbackRes.buffer()
+            
+            let stikerFallback = await sticker(fallbackBuffer, false, global.authsticker, global.nomepack)
+            
+            if (stikerFallback) {
+                await conn.sendFile(m.chat, stikerFallback, 'sticker.webp', '', m, true, { quoted: m })
+                await m.react('✅')
+            } else {
+                throw new Error('Fallback fallito')
+            }
         } catch (err) {
             await m.react('❌')
-            m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Critical Error_\n───────────────\n❌ Errore nel processamento dello sticker.\nAssicurati che FFmpeg sia attivo.`)
+            let errorMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Critical Error_
+───────────────
+❌ *𝐏𝐑𝐎𝐂𝐄𝐒𝐒𝐀𝐌𝐄𝐍𝐓𝐎 𝐅𝐀𝐋𝐋𝐈𝐓𝐎*
+
+• *Causa:* Errore interno FFmpeg o Buffer corrotto.
+• *Consiglio:* Prova con una parola singola.
+───────────────`.trim()
+            await m.reply(errorMsg)
         }
     }
 }
@@ -75,5 +78,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 handler.help = ['csticker']
 handler.tags = ['sticker']
 handler.command = /^(csticker|brat)$/i
+handler.register = true
 
 export default handler
