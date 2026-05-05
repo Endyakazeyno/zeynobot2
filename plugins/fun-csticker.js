@@ -1,77 +1,91 @@
 
 import { sticker } from '../lib/sticker.js'
-import fetch from 'node-fetch'
+import { createCanvas } from 'canvas'
+import GIFEncoder from 'gifencoder'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-    // Controllo input New Era
     if (!text) {
-        let usageMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Brat Engine_
-───────────────
-⚠️ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐒𝐈𝐍𝐓𝐀𝐒𝐒𝐈*
-
-• *Uso:* ${usedPrefix}${command} [testo]
-• *Esempio:* ${usedPrefix}${command} Questo testo è molto lungo per testare lo scroll
-───────────────`.trim()
-        return m.reply(usageMsg)
+        return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Canvas Engine_\n───────────────\n⚠️ Inserisci il testo.\nEsempio: ${usedPrefix}${command} Questo testo è molto lungo e scorrerà nello sticker!`)
     }
 
-    await m.react('⚡')
+    await m.react('🎨')
 
     try {
-        // API specializzata: Sfondo Bianco, Testo Nero. 
-        // Gestisce lo "scrolling" se il testo supera la larghezza standard.
-        // Usiamo l'endpoint che genera il video MP4 per garantire l'animazione se necessaria.
-        let apiUrl = `https://api.vreden.my.id/api/brat-animated?text=${encodeURIComponent(text)}&mode=white`
-        let res = await fetch(apiUrl)
+        const size = 512
+        const canvas = createCanvas(size, size)
+        const ctx = canvas.getContext('2d')
+        const fontSize = 70
         
-        if (!res.ok) throw new Error('API Offline')
+        ctx.font = `bold ${fontSize}px Arial`
+        const textWidth = ctx.measureText(text).width
         
-        let json = await res.json()
-        let mediaUrl = json.result
+        // Se il testo entra nello sticker, facciamo un'animazione semplice o statica
+        // Se il testo è più largo dello sticker, attiviamo lo scroll
+        const isLongText = textWidth > (size - 40)
+        const encoder = new GIFEncoder(size, size)
         
-        if (!mediaUrl) throw new Error('No Media URL')
+        // Inizializziamo l'encoder GIF
+        encoder.start()
+        encoder.setRepeat(0)   // 0 = loop
+        encoder.setDelay(50)   // velocità frame
+        encoder.setQuality(10) // qualità (1-30)
+        encoder.setTransparent(null)
 
-        // Scarichiamo il media (Video o WebP animato)
-        let mediaRes = await fetch(mediaUrl)
-        let buffer = await mediaRes.buffer()
+        const frames = isLongText ? 30 : 1 // Numero di frame
+
+        for (let i = 0; i < frames; i++) {
+            // Sfondo Bianco (come richiesto)
+            ctx.fillStyle = '#FFFFFF'
+            ctx.fillRect(0, 0, size, size)
+            
+            // Testo Nero
+            ctx.fillStyle = '#000000'
+            ctx.textAlign = 'left'
+            ctx.textBaseline = 'middle'
+            
+            let x
+            if (isLongText) {
+                // Calcolo dello scorrimento: il testo parte da destra e finisce a sinistra
+                const totalScroll = textWidth + size
+                const progress = i / frames
+                x = size - (totalScroll * progress)
+            } else {
+                // Testo corto: centrato
+                ctx.textAlign = 'center'
+                x = size / 2
+            }
+            
+            ctx.fillText(text, x, size / 2)
+            encoder.addFrame(ctx)
+        }
+
+        encoder.finish()
+        const buffer = encoder.out.getData()
 
         const packName = global.authsticker || '✧˚⭐️ 𝐍𝐄𝐖 𝐄𝐑𝐀 ⭐️˚✧'
         const authorName = global.nomepack || '✧˚⭐️ 𝐒𝐲𝐬𝐭𝐞𝐦 ⭐️˚✧'
 
-        // Passiamo il buffer alla tua libreria interna.
-        // Se è un video lungo, sticker.js (grazie a FFmpeg) creerà lo sticker video.
+        // Passiamo la GIF generata da Canvas alla tua lib/sticker.js
         let stiker = await sticker(buffer, false, packName, authorName)
 
         if (stiker) {
             await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, { quoted: m })
             await m.react('✅')
         } else {
-            // Fallback diretto se sticker() fallisce il processamento
+            // Se la conversione fallisce, inviamo il buffer grezzo come sticker
             await conn.sendMessage(m.chat, { sticker: buffer }, { quoted: m })
             await m.react('✅')
         }
 
     } catch (e) {
-        console.error('Brat Engine Error:', e)
-        
-        // Protocollo di emergenza: API Alternativa con sfondo bianco forzato
-        try {
-            let res2 = await fetch(`https://api.siputzx.my.id/api/maker/brat/animate?text=${encodeURIComponent(text)}`)
-            let buffer2 = await res2.buffer()
-            let stiker2 = await sticker(buffer2, false, global.authsticker, global.nomepack)
-            
-            await conn.sendFile(m.chat, stiker2, 'sticker.webp', '', m, true, { quoted: m })
-            await m.react('✅')
-        } catch (err) {
-            await m.react('❌')
-            m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Overload_\n───────────────\n❌ Impossibile generare lo sticker.\nI server di rendering non rispondono.`)
-        }
+        console.error(e)
+        await m.react('❌')
+        m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Internal Error_\n───────────────\n❌ Errore durante il rendering Canvas.\nAssicurati di avere \`canvas\` e \`gifencoder\` installati.`)
     }
 }
 
 handler.help = ['csticker']
 handler.tags = ['sticker']
 handler.command = /^(csticker|brat)$/i
-handler.register = true
 
 export default handler
