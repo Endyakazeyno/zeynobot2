@@ -1,71 +1,77 @@
 
 import { sticker } from '../lib/sticker.js'
-import { createCanvas } from 'canvas'
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
+    // Controllo input New Era
     if (!text) {
-        return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Canvas Engine_\n───────────────\n⚠️ Inserisci il testo per lo sticker.\nEsempio: ${usedPrefix}${command} Legam`)
+        let usageMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Brat Engine_
+───────────────
+⚠️ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐒𝐈𝐍𝐓𝐀𝐒𝐒𝐈*
+
+• *Uso:* ${usedPrefix}${command} [testo]
+• *Esempio:* ${usedPrefix}${command} Questo testo è molto lungo per testare lo scroll
+───────────────`.trim()
+        return m.reply(usageMsg)
     }
 
-    await m.react('🎨')
+    await m.react('⚡')
 
     try {
-        // Dimensioni standard sticker (512x512)
-        const canvas = createCanvas(512, 512)
-        const ctx = canvas.getContext('2d')
+        // API specializzata: Sfondo Bianco, Testo Nero. 
+        // Gestisce lo "scrolling" se il testo supera la larghezza standard.
+        // Usiamo l'endpoint che genera il video MP4 per garantire l'animazione se necessaria.
+        let apiUrl = `https://api.vreden.my.id/api/brat-animated?text=${encodeURIComponent(text)}&mode=white`
+        let res = await fetch(apiUrl)
         
-        // Impostazioni Font e Stile
-        const fontSize = 80
-        ctx.font = `bold ${fontSize}px Arial` // Puoi usare un font specifico se presente sul server
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
+        if (!res.ok) throw new Error('API Offline')
+        
+        let json = await res.json()
+        let mediaUrl = json.result
+        
+        if (!mediaUrl) throw new Error('No Media URL')
 
-        // Funzione per disegnare il frame
-        const drawFrame = (currentText) => {
-            // Sfondo verde "Brat" (o trasparente se preferisci)
-            ctx.fillStyle = '#8ACE00' 
-            ctx.fillRect(0, 0, canvas.width, canvas.height)
-            
-            // Testo Nero
-            ctx.fillStyle = '#000000'
-            // Gestione testo multi-riga semplice
-            const words = currentText.split(' ')
-            let line = ''
-            let y = canvas.height / 2
-            
-            ctx.fillText(currentText, canvas.width / 2, y)
-        }
-
-        // Se vuoi che sia animato "passo dopo passo", dovremmo generare un video.
-        // Ma per una gara veloce, generiamo la versione statica perfetta con Canvas 
-        // e la passiamo al tuo convertitore che non fallirà perché il buffer è creato localmente.
-        
-        drawFrame(text)
-        
-        let buffer = canvas.toBuffer('image/png')
+        // Scarichiamo il media (Video o WebP animato)
+        let mediaRes = await fetch(mediaUrl)
+        let buffer = await mediaRes.buffer()
 
         const packName = global.authsticker || '✧˚⭐️ 𝐍𝐄𝐖 𝐄𝐑𝐀 ⭐️˚✧'
-        const authorName = global.nomepack || '✧˚⭐️ 𝐒𝐲𝐬𝐭𝐞 m ⭐️˚✧'
+        const authorName = global.nomepack || '✧˚⭐️ 𝐒𝐲𝐬𝐭𝐞𝐦 ⭐️˚✧'
 
-        // Passiamo il buffer PNG generato da noi alla tua funzione sticker
+        // Passiamo il buffer alla tua libreria interna.
+        // Se è un video lungo, sticker.js (grazie a FFmpeg) creerà lo sticker video.
         let stiker = await sticker(buffer, false, packName, authorName)
 
         if (stiker) {
             await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, { quoted: m })
             await m.react('✅')
         } else {
-            throw new Error('Canvas to Sticker failed')
+            // Fallback diretto se sticker() fallisce il processamento
+            await conn.sendMessage(m.chat, { sticker: buffer }, { quoted: m })
+            await m.react('✅')
         }
 
     } catch (e) {
-        console.error(e)
-        await m.react('❌')
-        m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Canvas Error_\n───────────────\n❌ Assicurati che il modulo 'canvas' sia installato sul server.\n\`npm install canvas\``)
+        console.error('Brat Engine Error:', e)
+        
+        // Protocollo di emergenza: API Alternativa con sfondo bianco forzato
+        try {
+            let res2 = await fetch(`https://api.siputzx.my.id/api/maker/brat/animate?text=${encodeURIComponent(text)}`)
+            let buffer2 = await res2.buffer()
+            let stiker2 = await sticker(buffer2, false, global.authsticker, global.nomepack)
+            
+            await conn.sendFile(m.chat, stiker2, 'sticker.webp', '', m, true, { quoted: m })
+            await m.react('✅')
+        } catch (err) {
+            await m.react('❌')
+            m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Overload_\n───────────────\n❌ Impossibile generare lo sticker.\nI server di rendering non rispondono.`)
+        }
     }
 }
 
 handler.help = ['csticker']
 handler.tags = ['sticker']
 handler.command = /^(csticker|brat)$/i
+handler.register = true
 
 export default handler
