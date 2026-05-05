@@ -1,56 +1,73 @@
 
+import { sticker } from '../lib/sticker.js'
 import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-    // Controllo testo New Era
+    // Controllo input New Era
     if (!text) {
-        return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System_\n───────────────\n⚠️ Inserisci il testo per lo sticker animato.\nEsempio: ${usedPrefix}${command} ciao`)
+        let usageMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Sticker Engine_
+───────────────
+⚠️ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐒𝐈𝐍𝐓𝐀𝐒𝐒𝐈*
+
+• *Uso:* ${usedPrefix}${command} [testo]
+• *Esempio:* ${usedPrefix}${command} Legam OS
+───────────────`.trim()
+        return m.reply(usageMsg)
     }
 
-    // Reazione immediata per confermare che il comando è partito
-    await m.react('⚡')
+    // Feedback immediato
+    await m.react('⏳')
 
     try {
-        // API Ultra-Stabile per Brat Animato (Video MP4 corto ottimizzato)
-        let res = await fetch(`https://api.alyachan.dev/api/brat-video?text=${encodeURIComponent(text)}&apikey=Gatogpt`)
-        
-        if (!res.ok) throw new Error('Server Down')
+        // API che genera il video dell'animazione Brat
+        let res = await fetch(`https://api.vreden.my.id/api/brat-animated?text=${encodeURIComponent(text)}`)
+        if (!res.ok) throw new Error('API Error')
         
         let json = await res.json()
-        if (!json.status || !json.data.url) throw new Error('Invalid Response')
+        let videoUrl = json.result // URL del video animato
+        
+        if (!videoUrl) throw new Error('No Video URL')
 
-        let videoUrl = json.data.url
+        // SCARICHIAMO IL BUFFER DEL VIDEO
+        let response = await fetch(videoUrl)
+        let buffer = await response.buffer()
 
-        // USIAMO IL METODO PIÙ POTENTE: sendFile con trasformazione sticker forzata
-        // Questo metodo è quello che usano i bot professionali per non avere mai lo schermo bianco
-        await conn.sendFile(m.chat, videoUrl, 'brat.webp', '', m, {
-            asSticker: true,
-            packname: '𝐍𝐄𝐖 𝐄𝐑𝐀',
-            author: '𝐒𝐲𝐬𝐭𝐞𝐦',
-            categories: ['🤩']
-        }, { 
-            quoted: m,
-            ephemeralExpiration: 86400 
-        })
+        // DEFINIAMO I PACKNAME (usa i tuoi global o quelli di default)
+        const packName = global.authsticker || '✧˚⭐️ 𝐍𝐄𝐖 𝐄𝐑𝐀 ⭐️˚✧'
+        const authorName = global.nomepack || '✧˚⭐️ 𝐒𝐲𝐬𝐭𝐞𝐦 ⭐️˚✧'
 
-        await m.react('✅')
+        // USIAMO LA TUA LIBRERIA INTERNA PER CREARE LO STICKER
+        // Questo passaggio è fondamentale per evitare "impossibile scaricare"
+        let stiker = await sticker(buffer, false, packName, authorName)
+
+        if (stiker) {
+            // INVIO TRAMITE IL TUO METODO DI SISTEMA
+            await conn.sendFile(
+                m.chat,
+                stiker,
+                'sticker.webp',
+                '',
+                m,
+                false, // 'false' perché è già un webp pronto
+                { quoted: m }
+            )
+            await m.react('✅')
+        } else {
+            throw new Error('Sticker processing failed')
+        }
 
     } catch (e) {
         console.error(e)
-        // FALLBACK 2: Se la prima API fallisce, usiamo la seconda con metodo alternativo
+        // Fallback statico veloce se l'animazione fallisce (per non restare a mani vuote in gara)
         try {
-            let res2 = await fetch(`https://api.siputzx.my.id/api/maker/brat/animate?text=${encodeURIComponent(text)}`)
-            let buffer = await res2.buffer()
-            
-            // Invio come sticker animato diretto
-            await conn.sendMessage(m.chat, { 
-                sticker: buffer 
-            }, { quoted: m })
-            
-            await m.react('✅')
+            let resStatic = await fetch(`https://api.vreden.my.id/api/brat?text=${encodeURIComponent(text)}`)
+            let jsonStatic = await resStatic.json()
+            let stikerStatic = await sticker(false, jsonStatic.result, global.authsticker, global.nomepack)
+            await conn.sendFile(m.chat, stikerStatic, 'sticker.webp', '', m, false, { quoted: m })
+            await m.react('⚠️')
         } catch (err) {
             await m.react('❌')
-            m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Critical Error_\n───────────────\n❌ I server grafici sono congestionati.\nRiprova tra pochi istanti.`)
+            m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Critical Error_\n───────────────\n❌ Errore nel processamento dello sticker.\nAssicurati che FFmpeg sia attivo.`)
         }
     }
 }
