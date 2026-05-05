@@ -2,80 +2,85 @@
 import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-    // Controllo input con estetica New Era
+    // Controllo input New Era
     if (!text) {
-        let usageMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Sticker Engine_
+        let usageMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Elite Sticker Engine_
 ───────────────
 ⚠️ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐒𝐈𝐍𝐓𝐀𝐒𝐒𝐈*
 
 • *Uso:* ${usedPrefix}${command} [testo]
-• *Esempio:* ${usedPrefix}${command} ciao come stai
+• *Esempio:* ${usedPrefix}${command} Forza Legam!
 ───────────────`.trim()
         return m.reply(usageMsg)
     }
 
-    // Feedback visivo di caricamento
-    await m.react('⏳')
+    // Reazione per dare conferma immediata
+    await m.react('🔥')
 
     try {
-        // API dedicata alla generazione Video (BratVideo) che evita lo sfondo bianco piatto
-        let apiUrl = `https://api.siputzx.my.id/api/maker/brat/animate?text=${encodeURIComponent(text)}`
+        // Questa API genera DIRETTAMENTE un WebP animato di alta qualità (Brat Animato)
+        // Usiamo un endpoint che restituisce il file già ottimizzato per WhatsApp
+        let apiUrl = `https://api.vreden.my.id/api/brat-animated?text=${encodeURIComponent(text)}`
         let res = await fetch(apiUrl)
         
-        if (!res.ok) throw new Error('API Error')
+        if (!res.ok) throw new Error('API Primaria Offline')
         
-        let buffer = await res.buffer()
+        let json = await res.json()
+        let stickerUrl = json.result // L'API restituisce il link al file .webp animato
 
-        // Verifichiamo se il bot ha la funzione per inviare sticker da video
-        // Questa è la funzione più stabile per evitare l'errore "Impossibile scaricare"
-        if (conn.sendFile) {
-            // Inviamo il file come sticker direttamente. 
-            // Il mimetype 'image/webp' con l'estensione corretta forza il rendering dello sticker animato.
-            await conn.sendFile(m.chat, buffer, 'brat.webp', '', m, { 
-                asSticker: true,
-                packname: '𝐍𝐄𝐖 𝐄𝐑𝐀',
-                author: '𝐒𝐲𝐬𝐭𝐞𝐦'
-            })
-        } else {
-            // Fallback manuale se sendFile non è disponibile
-            await conn.sendMessage(m.chat, { 
-                sticker: buffer 
-            }, { quoted: m })
-        }
+        if (!stickerUrl) throw new Error('Nessun risultato dall\'API')
+
+        // Scarichiamo lo sticker
+        let sticRes = await fetch(stickerUrl)
+        let buffer = await sticRes.buffer()
+
+        // Invio dello sticker con metadati New Era
+        // Usiamo sendMessage con la chiave 'sticker' per la massima velocità
+        await conn.sendMessage(m.chat, { 
+            sticker: buffer,
+            contextInfo: {
+                externalAdReply: {
+                    title: "✨ 𝐍𝐄𝐖 𝐄𝐑𝐀 𝐁𝐑𝐀𝐓 ✨",
+                    body: "Generazione Animata Completata",
+                    previewType: "PHOTO",
+                    thumbnailUrl: "https://telegra.ph/file/08269e9a4f484196144e5.jpg", // Placeholder estetico
+                    sourceUrl: "https://github.com"
+                }
+            }
+        }, { quoted: m })
 
         await m.react('✅')
 
     } catch (e) {
         console.error(e)
-        // Tentativo di emergenza con API alternativa se la prima fallisce
+        // FALLBACK DI EMERGENZA (API Alternativa se la prima muore durante la gara)
         try {
-            let fallbackUrl = `https://aqul-api.vercel.app/api/bratvideo?text=${encodeURIComponent(text)}`
+            let fallbackUrl = `https://widipe.com/brat?text=${encodeURIComponent(text)}`
             let res2 = await fetch(fallbackUrl)
             let buffer2 = await res2.buffer()
             
+            // Invia come sticker base se l'animato fallisce del tutto
             await conn.sendMessage(m.chat, { 
-                video: buffer2, 
-                gifPlayback: true,
-                caption: `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Brat Recovery_`
+                sticker: buffer2 
             }, { quoted: m })
             
-            await m.react('✅')
+            await m.react('⚠️') // Segnala che è uscito statico per colpa del server
         } catch (err) {
-            let errorMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Error_
+            let errorMsg = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Critical Failure_
 ───────────────
-❌ *𝐆𝐄𝐍𝐄𝐑𝐀𝐙𝐈𝐎𝐍𝐄 𝐅𝐀𝐋𝐋𝐈𝐓𝐀*
+❌ *𝐄𝐑𝐑𝐎𝐑𝐄 𝐃𝐈 𝐑𝐄𝐍𝐃𝐄𝐑𝐈𝐍𝐆*
 
-• *Dettaglio:* Errore nel rendering del buffer video.
-• *Azione:* Prova con un testo più breve.
+• *Stato:* I server grafici sono sovraccarichi.
+• *Azione:* Riprova tra 10 secondi.
 ───────────────`.trim()
             await m.reply(errorMsg)
-            await m.react('❌')
+            await m.react('💀')
         }
     }
 }
 
 handler.help = ['csticker <testo>']
 handler.tags = ['sticker']
-handler.command = /^(csticker|brat|stickerbrat)$/i
+handler.command = /^(csticker|brat)$/i
 
 export default handler
