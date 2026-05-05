@@ -5,7 +5,7 @@ import GIFEncoder from 'gifencoder'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
     if (!text) {
-        return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Canvas Engine_\n───────────────\n⚠️ Inserisci il testo.\nEsempio: ${usedPrefix}${command} Questo testo è molto lungo e scorrerà nello sticker!`)
+        return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Canvas Engine_\n───────────────\n⚠️ Inserisci il testo.\nEsempio: ${usedPrefix}${command} Testo lungo che deve scorrere nello sticker`)
     }
 
     await m.react('🎨')
@@ -14,48 +14,45 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         const size = 512
         const canvas = createCanvas(size, size)
         const ctx = canvas.getContext('2d')
-        const fontSize = 70
         
-        ctx.font = `bold ${fontSize}px Arial`
+        // Font compatto e leggibile
+        const fontSize = 60
+        ctx.font = `bold ${fontSize}px Sans-Serif`
+        
         const textWidth = ctx.measureText(text).width
+        const isLong = textWidth > (size - 60)
         
-        // Se il testo entra nello sticker, facciamo un'animazione semplice o statica
-        // Se il testo è più largo dello sticker, attiviamo lo scroll
-        const isLongText = textWidth > (size - 40)
+        // Inizializziamo l'encoder GIF per creare l'animazione
         const encoder = new GIFEncoder(size, size)
-        
-        // Inizializziamo l'encoder GIF
         encoder.start()
-        encoder.setRepeat(0)   // 0 = loop
-        encoder.setDelay(50)   // velocità frame
-        encoder.setQuality(10) // qualità (1-30)
-        encoder.setTransparent(null)
+        encoder.setRepeat(0)   // Loop infinito
+        encoder.setDelay(40)   // Velocità scorrimento
+        encoder.setQuality(10)
+        
+        // Se il testo è lungo facciamo 40 frame di scorrimento, altrimenti 1 frame statico
+        const totalFrames = isLong ? 40 : 1
 
-        const frames = isLongText ? 30 : 1 // Numero di frame
-
-        for (let i = 0; i < frames; i++) {
-            // Sfondo Bianco (come richiesto)
+        for (let i = 0; i < totalFrames; i++) {
+            // Sfondo Bianco
             ctx.fillStyle = '#FFFFFF'
             ctx.fillRect(0, 0, size, size)
             
             // Testo Nero
             ctx.fillStyle = '#000000'
-            ctx.textAlign = 'left'
             ctx.textBaseline = 'middle'
             
-            let x
-            if (isLongText) {
-                // Calcolo dello scorrimento: il testo parte da destra e finisce a sinistra
-                const totalScroll = textWidth + size
-                const progress = i / frames
-                x = size - (totalScroll * progress)
+            if (isLong) {
+                // Logica Marquee: il testo scorre da destra a sinistra
+                ctx.textAlign = 'left'
+                const offset = (textWidth + size) * (i / totalFrames)
+                const x = size - offset
+                ctx.fillText(text, x, size / 2)
             } else {
-                // Testo corto: centrato
+                // Testo corto: Centrato e statico
                 ctx.textAlign = 'center'
-                x = size / 2
+                ctx.fillText(text, size / 2, size / 2)
             }
             
-            ctx.fillText(text, x, size / 2)
             encoder.addFrame(ctx)
         }
 
@@ -65,27 +62,29 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         const packName = global.authsticker || '✧˚⭐️ 𝐍𝐄𝐖 𝐄𝐑𝐀 ⭐️˚✧'
         const authorName = global.nomepack || '✧˚⭐️ 𝐒𝐲𝐬𝐭𝐞𝐦 ⭐️˚✧'
 
-        // Passiamo la GIF generata da Canvas alla tua lib/sticker.js
+        // Usiamo la tua libreria interna che hai confermato funzionare con .s
         let stiker = await sticker(buffer, false, packName, authorName)
 
         if (stiker) {
-            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, true, { quoted: m })
+            await conn.sendFile(m.chat, stiker, 'sticker.webp', '', m, false, { quoted: m })
             await m.react('✅')
         } else {
-            // Se la conversione fallisce, inviamo il buffer grezzo come sticker
+            // Fallback: invio del buffer GIF se la conversione webp fallisce
             await conn.sendMessage(m.chat, { sticker: buffer }, { quoted: m })
             await m.react('✅')
         }
 
     } catch (e) {
-        console.error(e)
+        console.error('Canvas Error:', e)
         await m.react('❌')
-        m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Internal Error_\n───────────────\n❌ Errore durante il rendering Canvas.\nAssicurati di avere \`canvas\` e \`gifencoder\` installati.`)
+        // Messaggio di errore se mancano le librerie sul server
+        m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Internal Error_\n───────────────\n❌ Errore critico nel rendering locale.\n\nAssicurati che siano installati:\n1. canvas\n2. gifencoder`)
     }
 }
 
 handler.help = ['csticker']
 handler.tags = ['sticker']
 handler.command = /^(csticker|brat)$/i
+handler.register = true
 
 export default handler
