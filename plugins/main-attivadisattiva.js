@@ -47,6 +47,7 @@ featureRegistry.forEach(f => {
 });
 
 let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isSam }) => {
+    // Determina se l'utente vuole attivare o disattivare
     let isEnable = /attiva|enable|on|1/i.test(command);
     
     global.db.data.chats = global.db.data.chats || {};
@@ -61,21 +62,14 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
         } catch (e) { return null; }
     };
 
-    // Immagine per la Card (Icona stato o Profilo Bot)
-    let cardThumb;
-    if (args.length > 0) {
-        // Se sta cambiando un modulo, usiamo icone di stato
-        cardThumb = isEnable 
-            ? 'https://files.catbox.moe/6v309c.png' // Icona Spunta Verde (Esempio)
-            : 'https://files.catbox.moe/8m8p2n.png'; // Icona Croce Rossa (Esempio)
-    } else {
-        try { 
-            cardThumb = await conn.profilePictureUrl(conn.user.jid, 'image'); 
-        } catch (e) { 
-            cardThumb = 'https://files.catbox.moe/pyp87f.jpg'; 
-        }
+    // Immagine profilo bot per AdReply
+    let profilePicture;
+    try { 
+        profilePicture = await conn.profilePictureUrl(conn.user.jid, 'image'); 
+    } catch (e) { 
+        profilePicture = 'https://files.catbox.moe/pyp87f.jpg'; 
     }
-    let thumbBuffer = await getBuffer(cardThumb);
+    let imageBuffer = await getBuffer(profilePicture);
 
     if (!args.length) {
         let menuText = `Ｎ Ｅ Ｗ Ｅ Ｒ Ａ  ｜  ＣＯＮＴＲＯＬ\n\n◤  𝐔𝐓𝐄𝐍𝐓𝐄 ﹕ @${m.sender.split('@')[0]}\n◣  𝐒𝐓𝐀𝐓𝐎   ﹕ Gestione Moduli\n\n───────────────\n_Usa ${usedPrefix}${command} [nome modulo] per configurare il sistema._`.trim();
@@ -93,7 +87,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
                 externalAdReply: {
                     title: `⚙️ 𝐂𝐎𝐍𝐓𝐑𝐎𝐋 𝐂𝐄𝐍𝐓𝐄𝐑`, 
                     body: '𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐲𝐬𝐭𝐞𝐦',
-                    thumbnail: thumbBuffer,
+                    thumbnail: imageBuffer,
                     mediaType: 1, 
                     renderLargerThumbnail: false,
                     sourceUrl: null
@@ -106,31 +100,38 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
     let type = args[0].toLowerCase();
     const feat = aliasMap.get(type);
 
-    if (!feat) return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Error_\n───────────────\n❌ Modulo *${type}* non trovato.`);
+    if (!feat) return m.reply(`*ＮＥＷ ＥＲＡ* • _Error_\n───────────────\n❌ Modulo *${type}* non trovato.`);
 
     // Check Permessi
-    if (feat.perm === PERM.sam && !isSam) return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Access Denied_\n───────────────\n⛔ Solo il Creatore può gestire questo modulo.`);
-    if (feat.perm === PERM.OWNER && !isOwner && !isSam) return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Access Denied_\n───────────────\n⛔ Solo l'Owner può gestire questo modulo.`);
-    if (feat.perm === PERM.ADMIN && m.isGroup && !(isAdmin || isOwner || isSam)) return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Access Denied_\n───────────────\n⛔ Solo gli Admin possono gestire questo modulo.`);
+    if (feat.perm === PERM.sam && !isSam) return m.reply(`*ＮＥＷ ＥＲＡ* • _Access Denied_\n───────────────\n⛔ Solo il Creatore può gestire questo modulo.`);
+    if (feat.perm === PERM.OWNER && !isOwner && !isSam) return m.reply(`*ＮＥＷ ＥＲＡ* • _Access Denied_\n───────────────\n⛔ Solo l'Owner può gestire questo modulo.`);
+    if (feat.perm === PERM.ADMIN && m.isGroup && !(isAdmin || isOwner || isSam)) return m.reply(`*ＮＥＷ ＥＲＡ* • _Access Denied_\n───────────────\n⛔ Solo gli Admin possono gestire questo modulo.`);
 
     const target = feat.store === 'bot' ? bot : chat;
     
-    // CORREZIONE LOGICA QUI
-    const currentState = !!target[feat.key]; // Converte in booleano (true/false)
+    // Logica di controllo stato con normalizzazione (forza boolean)
+    let currentState = !!target[feat.key]; 
+
+    // Se l'utente chiede !attiva e il modulo è già true, O chiede !disattiva e il modulo è già false
     if (currentState === isEnable) {
-        return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Warning_\n───────────────\n⚠️ Il modulo *${feat.name}* è già ${isEnable ? 'ATTIVO' : 'DISATTIVO'}.`);
+        return m.reply(`*ＮＥＷ ＥＲＡ* • _Warning_\n───────────────\n⚠️ Il modulo *${feat.name}* è già ${isEnable ? 'ATTIVO' : 'DISATTIVO'}.`);
     }
 
+    // Applica il cambiamento
     target[feat.key] = isEnable;
 
     let statusEmoji = isEnable ? '🟢' : '🔴';
     let statusTitle = isEnable ? '𝐌𝐎𝐃𝐔𝐋𝐎 𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎' : '𝐌𝐎𝐃𝐔𝐋𝐎 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎';
+    
+    // Icona di stato specifica per la card
+    let statusIcon = isEnable ? 'https://files.catbox.moe/6v309c.png' : 'https://files.catbox.moe/8m8p2n.png';
+    let statusBuffer = await getBuffer(statusIcon) || imageBuffer;
 
     let log = `ＮＥＷ ＥＲＡ  ｜  ＣＯＮＦＩＲＭ\n\n`;
     log += `◤  𝐌𝐎𝐃𝐔𝐋𝐎 ﹕ ${feat.name.toUpperCase()}\n`;
     log += `◣  𝐒𝐓𝐀𝐓𝐎   ﹕ ${statusEmoji} ${statusTitle}\n\n`;
     log += `───────────────\n`;
-    log += `_Configurazione di sistema aggiornata._`;
+    log += `_Database sincronizzato con successo._`;
 
     await conn.sendMessage(m.chat, {
         text: log,
@@ -144,8 +145,8 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
             },
             externalAdReply: {
                 title: `${statusEmoji} ${statusTitle}`, 
-                body: `Modulo: ${feat.name}`,
-                thumbnail: thumbBuffer,
+                body: `System Update: ${feat.name}`,
+                thumbnail: statusBuffer,
                 mediaType: 1, 
                 renderLargerThumbnail: false,
                 sourceUrl: null
