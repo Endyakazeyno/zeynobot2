@@ -61,7 +61,7 @@ async function handler(m, { isBotAdmin, isOwner, text, conn }) {
   await conn.groupParticipantsUpdate(m.chat, [mention], 'remove')
 }
 
-handler.customPrefix = /kick|avadachedavra|lindaèmia|kakka|sparisci|pannolini|puffo/i
+handler.customPrefix = /kick|avadachedavra|lindaèmia|ban|kakka|sparisci|pannolini|puffo/i
 handler.command = new RegExp
 handler.admin = true
 
