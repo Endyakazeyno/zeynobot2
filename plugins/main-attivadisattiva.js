@@ -54,7 +54,6 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
     let chat = global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {};
     let bot = global.db.data.settings[conn.user.jid] = global.db.data.settings[conn.user.jid] || {};
 
-    // Helper per l'immagine
     const getBuffer = async (url) => {
         try { 
             const res = await fetch(url); 
@@ -62,13 +61,21 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
         } catch (e) { return null; }
     };
 
-    let profilePicture;
-    try { 
-        profilePicture = await conn.profilePictureUrl(conn.user.jid, 'image'); 
-    } catch (e) { 
-        profilePicture = 'https://files.catbox.moe/pyp87f.jpg'; 
+    // Immagine per la Card (Icona stato o Profilo Bot)
+    let cardThumb;
+    if (args.length > 0) {
+        // Se sta cambiando un modulo, usiamo icone di stato
+        cardThumb = isEnable 
+            ? 'https://files.catbox.moe/6v309c.png' // Icona Spunta Verde (Esempio)
+            : 'https://files.catbox.moe/8m8p2n.png'; // Icona Croce Rossa (Esempio)
+    } else {
+        try { 
+            cardThumb = await conn.profilePictureUrl(conn.user.jid, 'image'); 
+        } catch (e) { 
+            cardThumb = 'https://files.catbox.moe/pyp87f.jpg'; 
+        }
     }
-    let imageBuffer = await getBuffer(profilePicture);
+    let thumbBuffer = await getBuffer(cardThumb);
 
     if (!args.length) {
         let menuText = `Ｎ Ｅ Ｗ Ｅ Ｒ Ａ  ｜  ＣＯＮＴＲＯＬ\n\n◤  𝐔𝐓𝐄𝐍𝐓𝐄 ﹕ @${m.sender.split('@')[0]}\n◣  𝐒𝐓𝐀𝐓𝐎   ﹕ Gestione Moduli\n\n───────────────\n_Usa ${usedPrefix}${command} [nome modulo] per configurare il sistema._`.trim();
@@ -86,7 +93,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
                 externalAdReply: {
                     title: `⚙️ 𝐂𝐎𝐍𝐓𝐑𝐎𝐋 𝐂𝐄𝐍𝐓𝐄𝐑`, 
                     body: '𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐲𝐬𝐭𝐞𝐦',
-                    thumbnail: imageBuffer,
+                    thumbnail: thumbBuffer,
                     mediaType: 1, 
                     renderLargerThumbnail: false,
                     sourceUrl: null
@@ -108,7 +115,9 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
 
     const target = feat.store === 'bot' ? bot : chat;
     
-    if (target[feat.key] === isEnable) {
+    // CORREZIONE LOGICA QUI
+    const currentState = !!target[feat.key]; // Converte in booleano (true/false)
+    if (currentState === isEnable) {
         return m.reply(`*𝐍𝐄𝐖 𝐄𝐑𝐀* • _Warning_\n───────────────\n⚠️ Il modulo *${feat.name}* è già ${isEnable ? 'ATTIVO' : 'DISATTIVO'}.`);
     }
 
@@ -121,7 +130,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
     log += `◤  𝐌𝐎𝐃𝐔𝐋𝐎 ﹕ ${feat.name.toUpperCase()}\n`;
     log += `◣  𝐒𝐓𝐀𝐓𝐎   ﹕ ${statusEmoji} ${statusTitle}\n\n`;
     log += `───────────────\n`;
-    log += `_Configurazione aggiornata con successo._`;
+    log += `_Configurazione di sistema aggiornata._`;
 
     await conn.sendMessage(m.chat, {
         text: log,
@@ -135,8 +144,8 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
             },
             externalAdReply: {
                 title: `${statusEmoji} ${statusTitle}`, 
-                body: `System: ${feat.name}`,
-                thumbnail: imageBuffer,
+                body: `Modulo: ${feat.name}`,
+                thumbnail: thumbBuffer,
                 mediaType: 1, 
                 renderLargerThumbnail: false,
                 sourceUrl: null
