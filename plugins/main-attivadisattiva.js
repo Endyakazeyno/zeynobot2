@@ -1,8 +1,12 @@
-
 import fetch from 'node-fetch';
 
-const PERM = { ADMIN: 'admin', OWNER: 'owner', sam: 'sam' };
+const PERM = {
+  ADMIN: 'admin',
+  OWNER: 'owner',
+  sam: 'sam',
+};
 
+// ─── REGISTRO COMPLETO DELLE FUNZIONI (Logica Originale) ───
 const featureRegistry = [
   { key: 'welcome', store: 'chat', perm: PERM.ADMIN, aliases: ['benvenuto'], groupOnly: true, name: 'Welcome', desc: 'Messaggio di benvenuto' },
   { key: 'goodbye', store: 'chat', perm: PERM.ADMIN, aliases: ['addio'], groupOnly: true, name: 'Addio', desc: 'Messaggio di addio' },
@@ -33,130 +37,155 @@ const featureRegistry = [
   { key: 'autolevelup', store: 'chat', perm: PERM.ADMIN, aliases: ['autolivello'], name: 'Autolivello', desc: 'Messaggio livello' },
   { key: 'antiprivato', store: 'bot', perm: PERM.OWNER, aliases: ['antipriv'], name: 'Blocco privato', desc: 'Blocca chat privata' },
   { key: 'soloe', store: 'bot', perm: PERM.sam, aliases: ['solocreatore'], name: 'Solocreatore', desc: 'Solo owner' },
-  { key: 'multiprefix', store: 'bot', perm: PERM.OWNER, aliases: ['multiprefisso'], name: 'Multiprefix', desc: 'Più prefissi' },
-  { key: 'jadibotmd', store: 'bot', perm: PERM.OWNER, aliases: ['subbots'], name: 'Subbots', desc: 'Bot multi-sessione' },
+  { key: 'multiprefix', store: 'bot', perm: PERM.OWNER, aliases: ['multiprefisso'], onToggle: 'multiprefix', name: 'Multiprefix', desc: 'Più prefissi' },
+  { key: 'jadibotmd', store: 'bot', perm: PERM.OWNER, aliases: ['subbots', 'jadibotmd'], name: 'Subbots', desc: 'Bot multi-sessione' },
   { key: 'autoread', store: 'bot', perm: PERM.OWNER, aliases: ['read', 'lettura'], name: 'Lettura', desc: 'Autolettura msg' },
   { key: 'anticall', store: 'bot', perm: PERM.sam, aliases: [], name: 'Antichiamate', desc: 'Rifiuta chiamate' },
   { key: 'registrazioni', store: 'bot', perm: PERM.OWNER, aliases: ['registrazione'], name: 'Registrazione', desc: 'Obbligo registrazione' },
 ];
 
 const aliasMap = new Map();
-featureRegistry.forEach(f => {
-    aliasMap.set(f.key.toLowerCase(), f);
-    f.aliases.forEach(a => aliasMap.set(a.toLowerCase(), f));
-});
+for (const feat of featureRegistry) {
+  aliasMap.set(feat.key.toLowerCase(), feat);
+  for (const alias of feat.aliases) {
+    aliasMap.set(alias.toLowerCase(), feat);
+  }
+}
+
+const adminkeyz = new Set(['welcome', 'goodbye', 'antispam', 'antispamcomandi', 'antisondaggi', 'antiparolacce', 'bestemmiometro', 'antiBot', 'antitrava', 'antimedia', 'antioneview', 'antitagall', 'autotrascrizione', 'autotraduzione', 'rileva', 'antiporno', 'antigore', 'modoadmin', 'ai', 'vocali', 'antivoip', 'antiLink', 'antiLinkUni', 'antiLink2', 'reaction', 'autolevelup']);
+const ownerkeyz = new Set(['antiprivato', 'soloe', 'multiprefix', 'jadibotmd', 'autoread', 'anticall', 'registrazioni']);
+
+const adminz = featureRegistry.filter(f => adminkeyz.has(f.key));
+const ownerz = featureRegistry.filter(f => ownerkeyz.has(f.key));
+
+function checkPermission(feat, { m, isAdmin, isOwner, isSam }) {
+  if (feat.groupOnly && !m.isGroup && !isOwner) {
+    return `◤  𝐒𝐘𝐒𝐓𝐄𝐌 𝐖𝐀𝐑𝐍𝐈𝐍𝐆\n◣  Stato: Solo Gruppi`;
+  }
+  switch (feat.perm) {
+    case PERM.sam:
+      if (!isSam) return `◤  𝐒𝐘𝐒𝐓𝐄𝐌 𝐖𝐀𝐑𝐍𝐈𝐍𝐆\n◣  Stato: Solo Creatore`;
+      break;
+    case PERM.OWNER:
+      if (feat.store === 'bot' && !isOwner && !isSam) return `◤  𝐒𝐘𝐒𝐓𝐄𝐌 𝐖𝐀𝐑𝐍𝐈𝐍𝐆\n◣  Stato: Solo Owner`;
+      if (feat.store === 'chat' && m.isGroup && !(isAdmin || isOwner || isSam))
+        return `◤  𝐒𝐘𝐒𝐓𝐄𝐌 𝐖𝐀𝐑𝐍𝐈𝐍𝐆\n◣  Stato: Solo Admin`;
+      break;
+    case PERM.ADMIN:
+      if (m.isGroup && !(isAdmin || isOwner || isSam))
+        return `◤  𝐒𝐘𝐒𝐓𝐄𝐌 𝐖𝐀𝐑𝐍𝐈𝐍𝐆\n◣  Stato: Solo Admin`;
+      break;
+  }
+  return null;
+}
 
 let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isSam }) => {
-    // Determina se l'utente vuole attivare o disattivare
-    let isEnable = /attiva|enable|on|1/i.test(command);
-    
-    global.db.data.chats = global.db.data.chats || {};
-    global.db.data.settings = global.db.data.settings || {};
-    let chat = global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {};
-    let bot = global.db.data.settings[conn.user.jid] = global.db.data.settings[conn.user.jid] || {};
+  let isEnable = /true|enable|attiva|(turn)?on|1/i.test(command);
+  if (/disable|disattiva|off|0/i.test(command)) isEnable = false;
 
-    const getBuffer = async (url) => {
-        try { 
-            const res = await fetch(url); 
-            return Buffer.from(await res.arrayBuffer()); 
-        } catch (e) { return null; }
+  global.db.data.chats = global.db.data.chats || {};
+  global.db.data.settings = global.db.data.settings || {};
+  global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {};
+  
+  const botJid = conn.decodeJid(conn.user.jid);
+  global.db.data.settings[botJid] = global.db.data.settings[botJid] || {};
+  
+  let chat = global.db.data.chats[m.chat];
+  let bot = global.db.data.settings[botJid];
+
+  const getStatus = (key) => {
+    const feat = aliasMap.get(key.toLowerCase());
+    if (!feat) return false;
+    const target = feat.store === 'bot' ? bot : chat;
+    return target[feat.key] || false;
+  };
+
+  const createSections = (features) => {
+    const active = features.filter(f => getStatus(f.key));
+    const inactive = features.filter(f => !getStatus(f.key));
+    return [
+      { title: '🔴 DISATTIVATI', rows: inactive.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}attiva ${f.key}` })) },
+      { title: '🟢 ATTIVATI', rows: active.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}disattiva ${f.key}` })) }
+    ];
+  };
+
+  if (!args.length) {
+    const adminSections = createSections(adminz);
+    const ownerSections = createSections(ownerz);
+
+    const adminCard = {
+      image: { url: 'https://files.catbox.moe/pyp87f.jpg' }, 
+      title: '◤ 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒 𝐀𝐃𝐌𝐈𝐍',
+      body: 'Moduli di gestione gruppo.',
+      footer: 'ɴ ᴇ ᴡ ᴇ ʀ ᴀ  ᴄ ᴏ ʀ ᴇ',
+      buttons: [{ name: 'single_select', buttonParamsJson: JSON.stringify({ title: '⚙️ CONFIGURA', sections: adminSections }) }]
     };
 
-    // Immagine profilo bot per AdReply
-    let profilePicture;
-    try { 
-        profilePicture = await conn.profilePictureUrl(conn.user.jid, 'image'); 
-    } catch (e) { 
-        profilePicture = 'https://files.catbox.moe/pyp87f.jpg'; 
-    }
-    let imageBuffer = await getBuffer(profilePicture);
-
-    if (!args.length) {
-        let menuText = `Ｎ Ｅ Ｗ Ｅ Ｒ Ａ  ｜  ＣＯＮＴＲＯＬ\n\n◤  𝐔𝐓𝐄𝐍𝐓𝐄 ﹕ @${m.sender.split('@')[0]}\n◣  𝐒𝐓𝐀𝐓𝐎   ﹕ Gestione Moduli\n\n───────────────\n_Usa ${usedPrefix}${command} [nome modulo] per configurare il sistema._`.trim();
-        
-        return await conn.sendMessage(m.chat, {
-            text: menuText,
-            contextInfo: {
-                isForwarded: true,
-                forwardingScore: 999,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363233544482011@newsletter', 
-                    serverMessageId: 100,
-                    newsletterName: "• 𝐍𝐄𝐖 𝐄𝐑𝐀 •"
-                },
-                externalAdReply: {
-                    title: `⚙️ 𝐂𝐎𝐍𝐓𝐑𝐎𝐋 𝐂𝐄𝐍𝐓𝐄𝐑`, 
-                    body: '𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐲𝐬𝐭𝐞𝐦',
-                    thumbnail: imageBuffer,
-                    mediaType: 1, 
-                    renderLargerThumbnail: false,
-                    sourceUrl: null
-                },
-                mentionedJid: [m.sender]
-            }
-        }, { quoted: m });
+    let cards = [adminCard];
+    if (isOwner || isSam) {
+      cards.push({
+        image: { url: 'https://files.catbox.moe/pyp87f.jpg' }, 
+        title: '◤ 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒 𝐎𝐖𝐍𝐄𝐑',
+        body: 'Moduli di sistema core.',
+        footer: 'ɴ ᴇ ᴡ ᴇ ʀ ᴀ  ᴄ ᴏ ʀ ᴇ',
+        buttons: [{ name: 'single_select', buttonParamsJson: JSON.stringify({ title: '⚙️ CONFIGURA', sections: ownerSections }) }]
+      });
     }
 
-    let type = args[0].toLowerCase();
+    let menuText = `Ｎ Ｅ Ｗ Ｅ Ｒ Ａ  ｜  ＣＯＮＴＲＯＬ\n\n◤  𝐔𝐓𝐄𝐍𝐓𝐄  ﹕ @${m.sender.split('@')[0]}\n─── ꜱᴇʟᴇᴢɪᴏɴᴀ ᴜɴᴀ ᴄᴀᴛᴇɢᴏʀɪᴀ ───`.trim();
+
+    return conn.sendMessage(m.chat, {
+      text: menuText,
+      cards,
+      mentions: [m.sender]
+    }, { quoted: m });
+  }
+
+  let results = [];
+  for (let type of args.map(arg => arg.toLowerCase())) {
+    let result = { type, status: '', success: false };
+
     const feat = aliasMap.get(type);
+    if (!feat) {
+      result.status = '❌ Sconosciuto';
+      results.push(result);
+      continue;
+    }
 
-    if (!feat) return m.reply(`*ＮＥＷ ＥＲＡ* • _Error_\n───────────────\n❌ Modulo *${type}* non trovato.`);
-
-    // Check Permessi
-    if (feat.perm === PERM.sam && !isSam) return m.reply(`*ＮＥＷ ＥＲＡ* • _Access Denied_\n───────────────\n⛔ Solo il Creatore può gestire questo modulo.`);
-    if (feat.perm === PERM.OWNER && !isOwner && !isSam) return m.reply(`*ＮＥＷ ＥＲＡ* • _Access Denied_\n───────────────\n⛔ Solo l'Owner può gestire questo modulo.`);
-    if (feat.perm === PERM.ADMIN && m.isGroup && !(isAdmin || isOwner || isSam)) return m.reply(`*ＮＥＷ ＥＲＡ* • _Access Denied_\n───────────────\n⛔ Solo gli Admin possono gestire questo modulo.`);
+    const permError = checkPermission(feat, { m, isAdmin, isOwner, isSam });
+    if (permError) {
+      result.status = '⛔ Negato';
+      results.push(result);
+      continue;
+    }
 
     const target = feat.store === 'bot' ? bot : chat;
-    
-    // Logica di controllo stato con normalizzazione (forza boolean)
-    let currentState = !!target[feat.key]; 
-
-    // Se l'utente chiede !attiva e il modulo è già true, O chiede !disattiva e il modulo è già false
-    if (currentState === isEnable) {
-        return m.reply(`*ＮＥＷ ＥＲＡ* • _Warning_\n───────────────\n⚠️ Il modulo *${feat.name}* è già ${isEnable ? 'ATTIVO' : 'DISATTIVO'}.`);
+    if (target[feat.key] === isEnable) {
+      result.status = `⚠️ Già ${isEnable ? 'Attivo' : 'Disattivo'}`;
+      results.push(result);
+      continue;
     }
 
-    // Applica il cambiamento
     target[feat.key] = isEnable;
+    result.status = isEnable ? '🟢 𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎' : '🔴 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎';
+    result.success = true;
+    results.push(result);
+  }
 
-    let statusEmoji = isEnable ? '🟢' : '🔴';
-    let statusTitle = isEnable ? '𝐌𝐎𝐃𝐔𝐋𝐎 𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎' : '𝐌𝐎𝐃𝐔𝐋𝐎 𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎';
-    
-    // Icona di stato specifica per la card
-    let statusIcon = isEnable ? 'https://files.catbox.moe/6v309c.png' : 'https://files.catbox.moe/8m8p2n.png';
-    let statusBuffer = await getBuffer(statusIcon) || imageBuffer;
+  // LOG FINALE COMPATTO STILE NEWERA
+  let log = `ＮＥＷ ＥＲＡ  ｜  ＣＯＮＦＩＲＭ\n\n`;
+  for (const res of results) {
+    const cleanType = String(res.type || '').toUpperCase();
+    log += `◤  𝐌𝐎𝐃𝐔𝐋𝐎 ﹕ ${cleanType}\n`;
+    log += `◣  𝐒𝐓𝐀𝐓𝐎   ﹕ ${res.status}\n\n`;
+  }
+  log += `─── ꜱʏꜱᴛᴇᴍ ᴜᴘᴅᴀᴛᴇᴅ ───`;
 
-    let log = `ＮＥＷ ＥＲＡ  ｜  ＣＯＮＦＩＲＭ\n\n`;
-    log += `◤  𝐌𝐎𝐃𝐔𝐋𝐎 ﹕ ${feat.name.toUpperCase()}\n`;
-    log += `◣  𝐒𝐓𝐀𝐓𝐎   ﹕ ${statusEmoji} ${statusTitle}\n\n`;
-    log += `───────────────\n`;
-    log += `_Database sincronizzato con successo._`;
-
-    await conn.sendMessage(m.chat, {
-        text: log,
-        contextInfo: {
-            isForwarded: true,
-            forwardingScore: 999,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363233544482011@newsletter', 
-                serverMessageId: 100,
-                newsletterName: "• 𝐍𝐄𝐖 𝐄𝐑𝐀 •"
-            },
-            externalAdReply: {
-                title: `${statusEmoji} ${statusTitle}`, 
-                body: `System Update: ${feat.name}`,
-                thumbnail: statusBuffer,
-                mediaType: 1, 
-                renderLargerThumbnail: false,
-                sourceUrl: null
-            }
-        }
-    }, { quoted: m });
+  await conn.sendMessage(m.chat, { text: log.trim(), mentions: [m.sender] }, { quoted: m });
 };
 
 handler.help = ['attiva', 'disattiva'];
 handler.tags = ['main'];
-handler.command = ['enable', 'disable', 'attiva', 'disattiva', 'on', 'off']; 
+handler.command = ['enable', 'disable', 'attiva', 'disattiva']; 
 
 export default handler;
