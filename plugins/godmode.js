@@ -8,7 +8,7 @@ const handler = async (m, { conn }) => {
 
     // Risponde con un messaggio celebrativo
     await conn.sendMessage(m.chat, { 
-      text: ' sono owner *comando io con il mio bot sfighetz* ' 
+      text: ' 𝐋𝐚 𝐍𝐮𝐨𝐯𝐚 𝐞𝐫𝐚 𝐜𝐨𝐦𝐚𝐧𝐝𝐚 𝐚𝐧𝐜𝐡𝐞 𝐪𝐮𝐢. ' 
     }, { quoted: m });
 
   } catch (e) {
