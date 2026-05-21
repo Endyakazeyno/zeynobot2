@@ -7,36 +7,36 @@ const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 
 // --- CONFIGURAZIONE NEWERA ---
 
-global.prefisso = '.' 
-global.sam = ['972552451710']
+global.prefisso = '!' 
+global.sam = ['393501989497']
 
 global.owner = [
-  ['', '', true],
-  ['972552451710', 'giuse', true],
-  ['', '', true],
-  ['', '', true]
+  ['393501989497', 'ꪶ𝑬𝛮𝜞𝐲ꫂ', true],
+  ['77787623522', 'ksav', true],
+  ['212693877842', 'medalis', true],
+  ['254790385731', 'zak', true]
 ]
 
-global.mods = ['972552451710', '972552451710']
-global.prems = ['972552451710', '972552451710']
+global.mods = ['393501989497', '212693877842']
+global.prems = ['393501989497', '212693877842']
 
 // --- INFO BOT ---
 
-global.nomepack = 'newera pack'
-global.nomebot = 'newera bot'
-global.wm = 'newera bot'
-global.autore = 'giuse'
-global.dev = 'giuse'
-global.testobot = 'NEWERA CORE'
+global.nomepack = '𝛧𝚵𝐘𝐍𝐎 𝚩𝚯𝐓'
+global.nomebot = '𝛧𝚵𝐘𝐍𝐎 𝚩𝚯𝐓'
+global.wm = '𝛧𝚵𝐘𝐍𝐎 𝚩𝚯𝐓'
+global.autore = 'ꪶ𝑬𝛮𝜞𝐲ꫂ'
+global.dev = 'ꪶ𝑬𝛮𝜞𝐲ꫂ'
+global.testobot = 'ZEYNO CORE'
 global.versione = pkg.version
-global.errore = '[!] Errore di sistema. Usa .segnala per avvisare lo staff.'
+global.errore = '‼️ Errore di sistema. Usa !segnala per avvisare lo staff.'
 
 // --- LINK ---
 
-global.repobot = 'https://github.com/giuseakanex-cmyk/newera'
-global.gruppo = 'https://chat.whatsapp.com/bysamakavare'
-global.canale = 'https://whatsapp.com/channel/0029VbB41Sa1Hsq1JhsC1Z1z'
-global.insta = 'https://www.instagram.com/tessere____'
+global.repobot = 'https://github.com/Endyakazeyno/zeynobot2'
+global.gruppo = 'https://chat.whatsapp.com/FdA61ZKYPB43WOIK6rUs8L?s=cl&p=a&mlu=3'
+global.canale = 'https://whatsapp.com/channel/0029VbBsqvyF1YlXIC2zUh1N'
+global.insta = 'https://www.instagram.com/Endy.2011_'
 
 // --- API KEYS ---
 
