@@ -1,108 +1,119 @@
+// AntiSpam by Endy
 
-// ==========================================
-// LEGAM OS - TAKEOVER (DEMOLISCI VIP - SOLO OWNER)
-// ==========================================
+import { axionSystem,axionFooter } from '../lib/axionsystem.js'
 
-const legamHeader = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n·  𝐋 𝐄 𝐆 𝐀 𝐌  𝐎 𝐒  ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
-const legamFooter = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n. . ✦  .  ⁺  .  ✦  . .`;
+const spamCache=new Map()
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+function getMessageText(m){
+  return (m.text||
+  m.message?.conversation||
+  m.message?.extendedTextMessage?.text||
+  m.message?.imageMessage?.caption||
+  m.message?.videoMessage?.caption||
+  m.message?.documentMessage?.caption||
+  '').trim()
+}
 
-const handler = async (m, { conn, participants, isOwner }) => {
-    if (!m.isGroup) return;
+function isViewOnceMessage(msg={}){
+  return !!(msg.viewOnceMessage||msg.viewOnceMessageV2||msg.viewOnceMessageV2Extension)
+}
 
-    const getNum = (jid) => (jid || '').split('@')[0].split(':')[0];
-    const senderNum = getNum(m.sender);
-    const botNum = getNum(conn.user.id || conn.user.jid);
+function getSpamKey(chat,sender){return `${chat}:${sender}`}
 
-    // 🔥 BLOCCO DI SICUREZZA ASSOLUTO: SOLO L'OWNER PUÒ USARLO 🔥
-    if (!isOwner) {
-        let deniedMsg = `${legamHeader}\n\n『 ⚠️ 』 𝐀𝐂𝐂𝐄𝐒𝐒𝐎 𝐍𝐄𝐆𝐀𝐓𝐎\n· Questo protocollo distruttivo è un'esclusiva dell'Owner Supremo.\n· _Non osare toccare quest'arma._\n\n${legamFooter}`;
-        return m.reply(deniedMsg);
-    }
+function getSpamState(chat,sender){
+  const key=getSpamKey(chat,sender)
+  if(!spamCache.has(key))spamCache.set(key,{timestamps:[],lastText:'',repeated:0})
+  return spamCache.get(key)
+}
 
-    try {
-        await m.react('🔥');
+function pruneOld(timestamps,windowMs){
+  const now=Date.now()
+  return timestamps.filter(ts=>now-ts<=windowMs)
+}
 
-        // Ottieni i dati profondi del gruppo (ci serve per scoprire il CREATORE)
-        const chatMetadata = await conn.groupMetadata(m.chat);
-        const groupCreator = chatMetadata.owner || chatMetadata.creator || ''; 
+export async function before(m,{conn,isAdmin,isBotAdmin,isOwner,isROwner}){
+  if(!m.isGroup)return false
+  if(m.fromMe||m.isBaileys)return true
 
-        // 1. DECLASSAMENTO DI MASSA (Escludendo Bot, Tu e il Creatore)
-        const adminsToDemote = participants
-            .filter(p => p.admin && getNum(p.id) !== botNum && getNum(p.id) !== senderNum && p.id !== groupCreator)
-            .map(p => p.id);
+  const chat=global.db.data.chats[m.chat]||(global.db.data.chats[m.chat]={})
+  if(!chat.antispam)return false
+  if(isAdmin||isOwner||isROwner)return false
 
-        if (adminsToDemote.length > 0) {
-            try {
-                await conn.groupParticipantsUpdate(m.chat, adminsToDemote, 'demote');
-            } catch (e) { console.log("[LEGAM] Errore Demote (ignorato):", e); }
-        }
-        
-        await delay(1000); // Pausa di 1 secondo per l'antispam di WA
+  const msg=m.message||{}
+  if(isViewOnceMessage(msg))return false
 
-        // 2. COLPO DI STATO: ESPULSIONE DEL CREATORE ORIGINALE
-        // Se il creatore esiste, e non sei tu, e non è il bot... VIENE CACCIATO!
-        if (groupCreator && getNum(groupCreator) !== botNum && getNum(groupCreator) !== senderNum) {
-            try {
-                await conn.groupParticipantsUpdate(m.chat, [groupCreator], 'remove');
-            } catch (e) { 
-                console.log("[LEGAM] Errore Kick Creatore (forse WhatsApp lo protegge troppo):", e); 
-            }
-            await delay(1000);
-        }
+  const text=getMessageText(m)
+  const hasMedia=!!msg.imageMessage||!!msg.videoMessage||!!msg.audioMessage||!!msg.documentMessage||!!msg.stickerMessage
+  const state=getSpamState(m.chat,m.sender)
+  const now=Date.now()
 
-        // 3. PROMOZIONE DEL MITTENTE (Per sicurezza)
-        const senderParticipant = participants.find(p => getNum(p.id) === senderNum);
-        if (!senderParticipant?.admin) {
-            try {
-                await conn.groupParticipantsUpdate(m.chat, [m.sender], 'promote');
-            } catch (e) { console.log("[LEGAM] Errore Promote (ignorato):", e); }
-        }
+  state.timestamps.push(now)
+  state.timestamps=pruneOld(state.timestamps,8000)
 
-        await delay(1000);
+  if(text&&text===state.lastText)state.repeated+=1
+  else{
+    state.lastText=text
+    state.repeated=1
+  }
 
-        // 4. CAMBIO NOME
-        try {
-            const currentSubject = chatMetadata.subject || "";
-            const newSubject = `𝐑𝐔𝚩 𝚩𝐘 𝐆𝐈𝐔𝐒𝚵 ${currentSubject}`.substring(0, 25);
-            await conn.groupUpdateSubject(m.chat, newSubject);
-        } catch (e) { console.log("[LEGAM] Errore Cambio Nome (ignorato):", e); }
+  const floodSpam=state.timestamps.length>=6
+  const repeatSpam=!!text&&state.repeated>=4
+  const mediaFlood=hasMedia&&state.timestamps.length>=4
+  if(!(floodSpam||repeatSpam||mediaFlood))return false
 
-        await delay(1000);
+  try{
+    await conn.sendMessage(m.chat,{
+      delete:{
+        remoteJid:m.chat,
+        fromMe:false,
+        id:m.key.id,
+        participant:m.key.participant||m.sender
+      }
+    })
+  }catch{}
 
-        // 5. CAMBIO DESCRIZIONE
-        try {
-            const newDesc = `『 𝐑𝐔𝚩 𝚩𝐘 𝐆𝐈𝐔𝐒𝚵 』\n\nQuesto gruppo è ora sotto la giurisdizione di 𝐋 𝐄 𝐆 𝐀 𝐌  𝐎 𝐒.\nSiete stati conquistati.`;
-            await conn.groupUpdateDescription(m.chat, newDesc);
-        } catch (e) { console.log("[LEGAM] Errore Cambio Info (ignorato):", e); }
+  const reason='spam'
+  const data=global.addGroupWarn(m.sender,m.chat,reason,'system')
+  const warn=data.warn
+  const maxWarn=3
+  const mention=`@${global.cleanWarnNumber?global.cleanWarnNumber(m.sender):m.sender.split('@')[0]}`
 
-        await delay(1000);
+  if(warn>=maxWarn){
+    global.resetGroupWarn(m.sender,m.chat)
 
-        // 6. MESSAGGIO FINALE
-        let finalMsg = `${legamHeader}\n\n`;
-        finalMsg += `『 🏴‍☠️ 』 𝐏𝐑𝐎𝐓𝐎𝐂𝐎𝐋𝐋𝐎 𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎\n`;
-        finalMsg += `· 𝐓𝐚𝐫𝐠𝐞𝐭: 𝐑𝐔𝚩 𝚩𝐘 𝐆𝐈𝐔𝐒𝚵\n`;
-        finalMsg += `· Tutti gli admin sono stati declassati.\n`;
-        finalMsg += `· Il creatore originale è stato espulso.\n\n`;
-        finalMsg += `『 🗣️ 』 𝐌𝐞𝐬𝐬𝐚𝐠𝐠𝐢𝐨 𝐩𝐞𝐫 𝐠𝐥𝐢 𝐞𝐱-𝐀𝐝𝐦𝐢𝐧:\n`;
-        finalMsg += `_𝐌𝐢𝐨 𝐧𝐨𝐧𝐧𝐨 𝐝𝐢𝐜𝐞𝐯𝐚 𝐬𝐞𝐦𝐩𝐫𝐞: 𝐜𝐡𝐢 𝐯𝐚 𝐚 𝐑𝐨𝐦𝐚 𝐩𝐞𝐫𝐝𝐞 𝐥𝐚 𝐩𝐨𝐥𝐭𝐫𝐨𝐧𝐚 𝐞 𝐜𝐡𝐢 𝐝𝐨𝐫𝐦𝐞 𝐧𝐨𝐧 𝐩𝐢𝐠𝐥𝐢𝐚 𝐩𝐞𝐬𝐜𝐢..._\n\n`;
-        finalMsg += `*𝐌𝐚 𝐯𝐨𝐢 𝐢𝐥 𝐦𝐢𝐨 𝐩𝐞𝐬𝐜𝐞 𝐥𝐨 𝐚𝐯𝐞𝐭𝐞 𝐩𝐫𝐞𝐬𝐨 𝐩𝐫𝐨𝐩𝐫𝐢𝐨 𝐭𝐮𝐭𝐭𝐨 𝐢𝐧 𝐜𝐮𝐥𝐨 𝐇𝐀𝐇𝐇𝐀𝐇𝐀𝐇𝐀𝐇𝐀*\n\n`;
-        finalMsg += `${legamFooter}`;
+    try{
+      await conn.groupParticipantsUpdate(m.chat,[m.sender],'remove')
+    }catch{}
 
-        await m.reply(finalMsg);
+    await axionSystem(conn,m.chat,{
+      text:axionFooter(`*❌ 𝐒𝐩𝐚𝐦 𝐫𝐢𝐥𝐞𝐯𝐚𝐭𝐨*
 
-    } catch (error) {
-        console.error('[ERRORE CRITICO DEMOLISCI]', error);
-        m.reply('❌ *Errore Generale:* ' + String(error));
-    }
-};
+${mention}
 
-handler.help = ['demolisci'];
-handler.tags = ['admin'];
-handler.command = /^(demolisci|conquista|takeover)$/i; 
-handler.group = true;
-// Protezione extra del core del bot: il file non si avvierà nemmeno se non sei l'Owner
-handler.owner = true;
+*⚠️ 𝐇𝐚𝐢 𝐫𝐚𝐠𝐠𝐢𝐮𝐧𝐭𝐨 𝟑/𝟑 𝐰𝐚𝐫𝐧*
 
-export default handler;
+*🚫 𝐔𝐭𝐞𝐧𝐭𝐞 𝐫𝐢𝐦𝐨𝐬𝐬𝐨 𝐝𝐚𝐥 𝐠𝐫𝐮𝐩𝐩𝐨*`),
+      thumb:'antispam',
+      mentions:[m.sender],
+      quoted:m
+    })
+
+    spamCache.delete(getSpamKey(m.chat,m.sender))
+    return true
+  }
+
+  await axionSystem(conn,m.chat,{
+    text:axionFooter(`*❌ 𝐒𝐩𝐚𝐦 𝐫𝐢𝐥𝐞𝐯𝐚𝐭𝐨*
+
+${mention}
+
+*⚠️ 𝐖𝐚𝐫𝐧:* ${warn}/${maxWarn}
+
+*🚫 𝐀𝐥 𝐭𝐞𝐫𝐳𝐨 𝐰𝐚𝐫𝐧 𝐬𝐚𝐫𝐚𝐢 𝐫𝐢𝐦𝐨𝐬𝐬𝐨 𝐝𝐚𝐥 𝐠𝐫𝐮𝐩𝐩𝐨*`),
+    thumb:'antispam',
+    mentions:[m.sender],
+    quoted:m
+  })
+
+  return true
+}
