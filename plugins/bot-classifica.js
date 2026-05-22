@@ -171,7 +171,7 @@ let handler = async (m, { conn, args, participants, isOwner }) => {
             ${columnsHtml}
         </div>
 
-        <div class="footer">${isOwner ? 'VARE ✧ BOT' : 'VARE ❀ BOT'}</div>
+        <div class="footer">${isOwner ? 'ZEYNO BOT' : 'ZEYNO BOT'}</div>
     </body>
     </html>`
 
