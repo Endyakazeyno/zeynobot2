@@ -21,7 +21,7 @@ handler.before = async function (m, { conn, isOwner }) {
 Le chat private sono sigillate. 
 Non sei autorizzato a parlarmi qui.
 
-👑 𝐎𝐖𝐍𝐄𝐑 ➤ 𝐆𝐈𝐔𝐒𝚵
+👑 𝐎𝐖𝐍𝐄𝐑 ➤ ꪶ𝑬𝛮𝜞𝐲ꫂ
 ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim()
 
         // Manda il messaggio di avviso
