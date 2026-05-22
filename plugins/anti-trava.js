@@ -34,7 +34,7 @@ export async function before(m, { conn, isAdmin, isBotAdmin, isOwner, isSam }) {
         const userTag = m.sender.split('@')[0];
         const reason = isTooLong ? 'Messaggio troppo lungo' : 'Trava nel grande 2026';
         await conn.sendMessage(m.chat, {
-            text: `『 🚫 』 \`Trava rilevato\`\n\n➤ \`Utente:\` @${userTag}\n➤ \`Azione:\` Rimosso dal gruppo\n➤ \`Motivo:\` ${reason}\n\n\`vare ✧ bot\``,
+            text: `『 🚫 』 \`Trava rilevato\`\n\n➤ \`Utente:\` @${userTag}\n➤ \`Azione:\` Rimosso dal gruppo\n➤ \`Motivo:\` ${reason}\n\n\`zeyno\``,
             mentions: [m.sender]
         });
 
