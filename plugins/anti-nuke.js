@@ -1,13 +1,13 @@
 
 import fetch from 'node-fetch'
 
-const legamHeader = `*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System Protection_
+const legamHeader = `*𝛧𝚵𝐘𝐍𝐎 𝚩𝚯𝐓* • _System Protection_
 ───────────────
 · ☢️ 𝐀 𝐍 𝐓 𝐈 𝐍 𝐔 𝐊 𝐄 ☢️ ·
 ───────────────`;
 
 let handler = async (m, { conn, text, command, usedPrefix, isOwner }) => {
-    if (!m.isGroup) return m.reply("*𝐍𝐄𝐖 𝐄𝐑𝐀* • _System_\n───────────────\n⚠️ Questo comando funziona solo nei gruppi.");
+    if (!m.isGroup) return m.reply("*𝛧𝚵𝐘𝐍𝐎 𝚩𝚯𝐓* • _System_\n───────────────\n⚠️ Questo comando funziona solo nei gruppi.");
 
     const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {});
     if (!chat.whitelist) chat.whitelist = [];
@@ -118,7 +118,7 @@ ${adminsToDemote.length > 0 ? adminsToDemote.map(jid => `• @${jid.split('@')[0
             forwardedNewsletterMessageInfo: {
                 newsletterJid: '120363233544482011@newsletter',
                 serverMessageId: 100,
-                newsletterName: "🛡️ 𝐍𝐄𝐖 𝐄𝐑𝐀 • 𝐒𝐞𝐜𝐮𝐫𝐢𝐭𝐲"
+                newsletterName: "🛡️ 𝛧𝚵𝐘𝐍𝐎 𝚩𝚯𝐓 • 𝐒𝐞𝐜𝐮𝐫𝐢𝐭𝐲"
             }
         }
     });
