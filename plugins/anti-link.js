@@ -100,5 +100,4 @@ handler.before = async function (m, { conn, isAdmin, isBotAdmin, isOwner, isSam 
 }
 
 export default handler;
-
-
+        
