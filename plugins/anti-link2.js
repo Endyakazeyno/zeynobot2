@@ -65,7 +65,7 @@ let handler = m => m;
 
 handler.before = async function (m, { conn, isAdmin, isBotAdmin, isOwner, isSam }) {
     if (!m.isGroup || isAdmin || isOwner || isSam || m.fromMe) return false;
-    
+
     const chat = global.db.data.chats[m.chat];
     if (!chat || !chat.antiLink2) return false;
 
@@ -131,5 +131,3 @@ handler.before = async function (m, { conn, isAdmin, isBotAdmin, isOwner, isSam 
 }
 
 export default handler;
-
-
